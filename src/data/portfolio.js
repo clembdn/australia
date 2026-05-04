@@ -1,0 +1,171 @@
+// Static demo dataset. All EUR figures; AUD conversion done in CurrencyContext.
+
+export const accounts = [
+  {
+    id: 'livret',
+    name: 'Livret A / LDDS',
+    category: 'Sécurité',
+    institution: 'Banque Populaire',
+    balance: 40000,
+    risk: 1,
+    apy: 3.0,
+    change24h: 3.29,
+    icon: 'shield',
+  },
+  {
+    id: 'av',
+    name: 'Assurance Vie',
+    category: 'Investissement',
+    institution: 'Linxea Spirit 2',
+    balance: 9600,
+    risk: 4,
+    apy: 6.4,
+    change24h: 18.42,
+    icon: 'trending',
+  },
+  {
+    id: 'ps',
+    name: 'Parts Sociales',
+    category: 'Bloqué',
+    institution: 'Crédit Mutuel',
+    balance: 11400,
+    risk: 2,
+    apy: 2.1,
+    change24h: 0,
+    icon: 'lock',
+  },
+  {
+    id: 'pea',
+    name: 'PEA — DCA',
+    category: 'Investissement',
+    institution: 'Bourse Direct',
+    balance: 9000,
+    risk: 5,
+    apy: 8.7,
+    change24h: -12.4,
+    icon: 'chart',
+  },
+]
+
+export const totalCapitalSeries = [
+  { month: 'May 25', value: 52400 },
+  { month: 'Jun 25', value: 54100 },
+  { month: 'Jul 25', value: 55800 },
+  { month: 'Aug 25', value: 57200 },
+  { month: 'Sep 25', value: 59100 },
+  { month: 'Oct 25', value: 60800 },
+  { month: 'Nov 25', value: 62500 },
+  { month: 'Dec 25', value: 64100 },
+  { month: 'Jan 26', value: 65900 },
+  { month: 'Feb 26', value: 67400 },
+  { month: 'Mar 26', value: 68900 },
+  { month: 'Apr 26', value: 70000 },
+]
+
+export const allocation = [
+  { name: 'Sécurité', value: 40000, color: '#2D7FF9' },
+  { name: 'Investissement', value: 18600, color: '#22C55E' },
+  { name: 'Bloqué', value: 11400, color: '#F59E0B' },
+]
+
+export const peaEntries = [
+  {
+    date: '2025-05-01',
+    invested: 50,
+    cumulative: 50,
+    value: 51.2,
+    spark: [49.8, 50.1, 50.4, 51.0, 51.2],
+  },
+  {
+    date: '2025-06-01',
+    invested: 50,
+    cumulative: 100,
+    value: 104.8,
+    spark: [100.6, 102.3, 101.7, 103.4, 104.8],
+  },
+  {
+    date: '2025-07-01',
+    invested: 50,
+    cumulative: 150,
+    value: 158.1,
+    spark: [155.0, 156.8, 154.9, 157.2, 158.1],
+  },
+  {
+    date: '2025-08-01',
+    invested: 50,
+    cumulative: 200,
+    value: 209.4,
+    spark: [205.0, 207.2, 206.4, 208.1, 209.4],
+  },
+  {
+    date: '2025-09-01',
+    invested: 50,
+    cumulative: 250,
+    value: 264.7,
+    spark: [259.5, 261.7, 263.2, 262.8, 264.7],
+  },
+  {
+    date: '2025-10-01',
+    invested: 50,
+    cumulative: 300,
+    value: 318.6,
+    spark: [314.0, 312.8, 316.5, 317.2, 318.6],
+  },
+  {
+    date: '2025-11-01',
+    invested: 50,
+    cumulative: 350,
+    value: 376.2,
+    spark: [369.4, 372.1, 374.6, 375.5, 376.2],
+  },
+  {
+    date: '2025-12-01',
+    invested: 50,
+    cumulative: 400,
+    value: 432.9,
+    spark: [428.0, 426.5, 430.2, 431.8, 432.9],
+  },
+  {
+    date: '2026-01-01',
+    invested: 50,
+    cumulative: 450,
+    value: 491.7,
+    spark: [486.4, 488.2, 487.5, 490.1, 491.7],
+  },
+  {
+    date: '2026-02-01',
+    invested: 50,
+    cumulative: 500,
+    value: 549.8,
+    spark: [543.0, 545.7, 547.2, 548.9, 549.8],
+  },
+  {
+    date: '2026-03-01',
+    invested: 50,
+    cumulative: 550,
+    value: 612.4,
+    spark: [605.1, 607.8, 609.6, 611.2, 612.4],
+  },
+  {
+    date: '2026-04-01',
+    invested: 50,
+    cumulative: 600,
+    value: 668.9,
+    spark: [661.0, 663.5, 666.2, 665.8, 668.9],
+  },
+]
+
+export const australia = {
+  loanGoal: 35000,
+  loanRaised: 12400,
+  departureDate: '2026-09-01',
+  monthlyBurn: 2150,
+  monthlyIncome: 1400,
+  settlement: [
+    { name: 'Visa sous-classe 500', cost: 1600, paid: 1600 },
+    { name: 'Vols (Paris → Sydney)', cost: 1200, paid: 800 },
+    { name: 'Couverture santé OSHC', cost: 950, paid: 0 },
+    { name: 'Acompte école (T1)', cost: 6800, paid: 2400 },
+    { name: 'Premier mois de loyer + dépôt de garantie', cost: 3200, paid: 0 },
+  ],
+}
