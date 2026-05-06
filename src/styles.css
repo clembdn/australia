@@ -45,6 +45,22 @@ body {
   box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6) !important;
 }
 
+/* Modal animation */
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-in {
+  animation: slide-in-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @layer components {
   .card {
     @apply bg-bg-card border border-border-subtle rounded-xl p-5 shadow-card transition-all duration-200;
