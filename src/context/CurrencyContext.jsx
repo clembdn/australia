@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, useState } from 'react'
 
 const CurrencyContext = createContext(null)
 
-const RATES = {
+export const CURRENCY_RATES = {
   EUR: { symbol: '€', code: 'EUR', rate: 1, locale: 'fr-FR' },
   AUD: { symbol: 'A$', code: 'AUD', rate: 1.64, locale: 'en-AU' },
 }
@@ -25,7 +25,7 @@ export function CurrencyProvider({ children }) {
   const [code, setCode] = useState('EUR')
 
   const value = useMemo(() => {
-    const config = RATES[code]
+    const config = CURRENCY_RATES[code]
     const convert = (eur) => eur * config.rate
     const format = (eur, opts = {}) => {
       const amount = convert(eur)

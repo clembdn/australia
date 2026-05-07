@@ -4,7 +4,6 @@ import {
 } from 'lucide-react'
 
 import { useAustraliaData } from '../hooks/useAustraliaData.js'
-import { useAuth } from '../context/AuthContext.jsx'
 
 import SummaryCard from '../components/australia/SummaryCard.jsx'
 import WarningBanner from '../components/australia/WarningBanner.jsx'
@@ -44,9 +43,9 @@ export default function AustraliaView() {
 
 // ─── Desktop Dashboard ───
 function DesktopAustraliaView({ data }) {
-  const { currentUser } = useAuth()
   const {
     format,
+    defaultPersonUid,
     settings,
     modalOpen,
     editingTx,
@@ -266,7 +265,7 @@ function DesktopAustraliaView({ data }) {
         onSave={handleSave}
         onDelete={handleDelete}
         transaction={editingTx}
-        currentUserUid={currentUser?.uid}
+        currentUserUid={defaultPersonUid}
       />
     </div>
   )

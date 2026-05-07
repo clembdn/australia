@@ -1,6 +1,6 @@
-import { Plane, Settings, LogOut, User } from 'lucide-react'
+import { Plane, Settings, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { getPersonByUid } from '../../config/people.js'
+import { getPersonByUid, getPersonUidForAuthUser } from '../../config/people.js'
 
 const NAV = [
   { id: 'australia', label: 'Trésorerie', icon: Plane },
@@ -9,7 +9,8 @@ const NAV = [
 
 export default function Sidebar({ active, onSelect, mobileOpen, onCloseMobile }) {
   const { currentUser, logout } = useAuth()
-  const person = currentUser ? getPersonByUid(currentUser.uid) : null
+  const personUid = getPersonUidForAuthUser(currentUser)
+  const person = getPersonByUid(personUid)
 
   return (
     <>
@@ -62,19 +63,10 @@ export default function Sidebar({ active, onSelect, mobileOpen, onCloseMobile })
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border-subtle">
           <div className="flex items-center gap-3">
-            <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-semibold ${person?.bg || 'bg-gradient-to-br from-brand to-brand-dim'} border ${person?.border || 'border-brand/20'}`}>
-              <User className={`h-4 w-4 ${person?.text || 'text-white'}`} />
-            </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate flex items-center gap-1.5">
+              <p className="text-sm font-medium truncate">
                 {person?.label || 'Utilisateur'}
-                {person && (
-                  <span className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-semibold ${person.bg} ${person.text} border ${person.border}`}>
-                    {person.shortLabel}
-                  </span>
-                )}
               </p>
-              <p className="text-xs text-text-muted truncate">{currentUser?.email}</p>
             </div>
             <button
               onClick={logout}

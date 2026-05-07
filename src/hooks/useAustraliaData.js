@@ -5,7 +5,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useCurrency } from '../context/CurrencyContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
-import { AUTHORIZED_UIDS } from '../config/people.js'
+import { AUTHORIZED_UIDS, getPersonUidForAuthUser } from '../config/people.js'
 import { subscribeToTransactions, createTransaction, updateTransaction, deleteTransaction, toggleTransactionActive } from '../services/transactionService.js'
 import { subscribeToSettings, updateSettings } from '../services/settingsService.js'
 import {
@@ -26,6 +26,7 @@ export function useAustraliaData() {
   const { format } = currency
   const { currentUser } = useAuth()
   const uid = currentUser?.uid
+  const defaultPersonUid = useMemo(() => getPersonUidForAuthUser(currentUser), [currentUser])
 
   // Firestore-backed state
   const [transactions, setTransactions] = useState([])
@@ -106,7 +107,14 @@ export function useAustraliaData() {
       setEditingTx(null)
       return true
     } catch (err) {
-      console.error('[FinAuzi] Failed to save transaction:', err)
+      console.error('[FinAuzi] Failed to save transaction:', {
+        code: err?.code,
+        message: err?.message,
+        name: err?.name,
+        uid,
+        transactionId: tx?.id ?? null,
+        personUid: tx?.personUid ?? null,
+      }, err)
       return false
     }
   }, [uid, transactions])
@@ -118,10 +126,16 @@ export function useAustraliaData() {
       setEditingTx(null)
       return true
     } catch (err) {
-      console.error('[FinAuzi] Failed to delete transaction:', err)
+      console.error('[FinAuzi] Failed to delete transaction:', {
+        code: err?.code,
+        message: err?.message,
+        name: err?.name,
+        uid,
+        transactionId: id,
+      }, err)
       return false
     }
-  }, [])
+  }, [uid])
 
   const handleTogglePause = useCallback(async (id) => {
     const tx = transactions.find(t => t.id === id)
@@ -249,6 +263,7 @@ export function useAustraliaData() {
 
     // Auth
     currentUser,
+    defaultPersonUid,
 
     // Loading
     isLoading,

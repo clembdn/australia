@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Plane, LayoutDashboard, Receipt, Settings } from 'lucide-react'
 import { useCurrency } from '../../context/CurrencyContext.jsx'
-import { useAuth } from '../../context/AuthContext.jsx'
 
 import MobileOverviewTab from './MobileOverviewTab.jsx'
 import MobileTransactionsTab from './MobileTransactionsTab.jsx'
@@ -18,9 +17,9 @@ const TABS = [
 export default function MobileAustraliaView({ data }) {
   const [activeTab, setActiveTab] = useState('overview')
   const { code, setCode } = useCurrency()
-  const { currentUser } = useAuth()
 
   const {
+    defaultPersonUid,
     modalOpen,
     editingTx,
     openCreateModal,
@@ -118,7 +117,7 @@ export default function MobileAustraliaView({ data }) {
           onSave={handleSave}
           onDelete={handleDelete}
           onClose={closeModal}
-          currentUserUid={currentUser?.uid}
+          currentUserUid={defaultPersonUid}
         />
       </MobileBottomSheet>
     </div>

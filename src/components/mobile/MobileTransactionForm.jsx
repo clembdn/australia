@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Save, Trash2, AlertCircle, User } from 'lucide-react'
+import { Save, Trash2, AlertCircle, User, ArrowLeftRight } from 'lucide-react'
 import { getCategoryConfig } from '../australia/CategoryBadge.jsx'
 import { FINAUZI_PEOPLE } from '../../config/people.js'
+import { CURRENCY_RATES } from '../../context/CurrencyContext.jsx'
 
 const CATEGORIES = [
   'housing', 'food', 'transport', 'admin', 'travel',
@@ -20,31 +21,50 @@ const EMPTY_FORM = {
   personUid: '',
 }
 
+const TRANSACTION_CURRENCIES = ['EUR', 'AUD']
+const AUD_RATE = CURRENCY_RATES.AUD.rate
+
+function formatDateFr(dateValue) {
+  if (!dateValue) return ''
+  const date = new Date(`${dateValue}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+}
+
 /**
  * Mobile-optimized transaction form with person attribution.
  */
 export default function MobileTransactionForm({ transaction, onSave, onDelete, onClose, currentUserUid }) {
   const isEditing = !!transaction
   const [form, setForm] = useState(EMPTY_FORM)
+  const [amountCurrency, setAmountCurrency] = useState('EUR')
   const [errors, setErrors] = useState({})
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
+    const fallbackPersonUid = currentUserUid || FINAUZI_PEOPLE[0]?.uid || ''
+    const initialAmount = transaction?.amountEUR != null ? String(transaction.amountEUR) : ''
     if (transaction) {
       setForm({
         title: transaction.title,
-        amountEUR: transaction.amountEUR,
+        amountEUR: initialAmount,
         type: transaction.type,
         recurrence: transaction.recurrence,
         category: transaction.category,
         date: transaction.date,
         endDate: transaction.endDate || '',
         notes: transaction.notes || '',
-        personUid: transaction.personUid || currentUserUid || '',
+        personUid: transaction.personUid || fallbackPersonUid,
       })
     } else {
-      setForm({ ...EMPTY_FORM, personUid: currentUserUid || '' })
+      setForm({ ...EMPTY_FORM, personUid: fallbackPersonUid, amountEUR: '' })
     }
+    setAmountCurrency('EUR')
     setErrors({})
     setShowDeleteConfirm(false)
   }, [transaction, currentUserUid])
@@ -62,14 +82,16 @@ export default function MobileTransactionForm({ transaction, onSave, onDelete, o
     return Object.keys(errs).length === 0
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return
+    const parsedAmount = Number(form.amountEUR)
+    const amountInEUR = amountCurrency === 'EUR' ? parsedAmount : parsedAmount / AUD_RATE
     const now = new Date().toISOString()
-    onSave({
+    await onSave({
       ...(transaction || {}),
       id: transaction?.id || undefined,
       title: form.title.trim(),
-      amountEUR: Number(form.amountEUR),
+      amountEUR: Number(amountInEUR.toFixed(2)),
       type: form.type,
       recurrence: form.recurrence,
       category: form.category,
@@ -83,9 +105,9 @@ export default function MobileTransactionForm({ transaction, onSave, onDelete, o
     })
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (showDeleteConfirm) {
-      onDelete(transaction.id)
+      await onDelete(transaction.id)
     } else {
       setShowDeleteConfirm(true)
     }
@@ -94,6 +116,21 @@ export default function MobileTransactionForm({ transaction, onSave, onDelete, o
   const set = (key, value) => {
     setForm(prev => ({ ...prev, [key]: value }))
     if (errors[key]) setErrors(prev => ({ ...prev, [key]: undefined }))
+  }
+
+  const setAmountCurrencyWithConversion = (nextCurrency) => {
+    setAmountCurrency((prevCurrency) => {
+      if (prevCurrency === nextCurrency) return prevCurrency
+
+      setForm((prevForm) => {
+        const raw = Number(prevForm.amountEUR)
+        if (!prevForm.amountEUR || Number.isNaN(raw)) return prevForm
+        const converted = prevCurrency === 'EUR' ? raw * AUD_RATE : raw / AUD_RATE
+        return { ...prevForm, amountEUR: String(Number(converted.toFixed(2))) }
+      })
+
+      return nextCurrency
+    })
   }
 
   return (
@@ -114,19 +151,45 @@ export default function MobileTransactionForm({ transaction, onSave, onDelete, o
 
       {/* Amount */}
       <div>
-        <label className="text-[11px] text-text-muted font-medium uppercase tracking-wider block mb-2">Montant (EUR)</label>
-        <input
-          type="number"
-          min="0"
-          step="0.01"
-          inputMode="decimal"
-          value={form.amountEUR}
-          onChange={(e) => set('amountEUR', e.target.value)}
-          placeholder="0"
-          className={`h-12 w-full rounded-2xl bg-bg-elevated border px-4 text-sm outline-none tabular-nums transition-colors ${
-            errors.amountEUR ? 'border-rose-500' : 'border-border-subtle focus:border-brand'
-          }`}
-        />
+        <label className="text-[11px] text-text-muted font-medium uppercase tracking-wider block mb-2">Montant ({amountCurrency})</label>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setAmountCurrencyWithConversion(amountCurrency === 'EUR' ? 'AUD' : 'EUR')}
+            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-text-muted hover:text-brand-glow hover:bg-brand/10 transition-colors"
+            title="Convertir EUR/AUD"
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+          </button>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            value={form.amountEUR}
+            onChange={(e) => set('amountEUR', e.target.value)}
+            placeholder="0"
+            className={`h-12 w-full rounded-2xl bg-bg-elevated border pl-12 pr-[94px] text-sm outline-none tabular-nums transition-colors ${
+              errors.amountEUR ? 'border-rose-500' : 'border-border-subtle focus:border-brand'
+            }`}
+          />
+          <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1 p-0.5 rounded-lg border border-border-subtle bg-bg-card/80">
+            {TRANSACTION_CURRENCIES.map((currency) => (
+              <button
+                key={currency}
+                type="button"
+                onClick={() => setAmountCurrencyWithConversion(currency)}
+                className={`h-7 px-2 rounded-md text-[10px] font-semibold transition-colors ${
+                  amountCurrency === currency
+                    ? 'bg-brand/20 text-brand-glow'
+                    : 'text-text-muted'
+                }`}
+              >
+                {currency}
+              </button>
+            ))}
+          </div>
+        </div>
         {errors.amountEUR && <ErrorMsg>{errors.amountEUR}</ErrorMsg>}
       </div>
 
@@ -228,29 +291,37 @@ export default function MobileTransactionForm({ transaction, onSave, onDelete, o
       <div className={`grid gap-3 ${form.recurrence === 'monthly' ? 'grid-cols-2' : 'grid-cols-1'}`}>
         <div>
           <label className="text-[11px] text-text-muted font-medium uppercase tracking-wider block mb-2">
-            {form.recurrence === 'monthly' ? 'Début' : 'Date'}
+            {form.recurrence === 'monthly' ? 'Départ' : 'Date'}
           </label>
           <input
             type="date"
+            lang="fr-FR"
             value={form.date}
             onChange={(e) => set('date', e.target.value)}
             className={`h-12 w-full rounded-2xl bg-bg-elevated border px-4 text-sm outline-none text-text-primary transition-colors ${
               errors.date ? 'border-rose-500' : 'border-border-subtle focus:border-brand'
             }`}
           />
+          {!errors.date && form.date && (
+            <p className="text-[11px] text-text-muted mt-1.5 capitalize">{formatDateFr(form.date)}</p>
+          )}
           {errors.date && <ErrorMsg>{errors.date}</ErrorMsg>}
         </div>
         {form.recurrence === 'monthly' && (
           <div>
-            <label className="text-[11px] text-text-muted font-medium uppercase tracking-wider block mb-2">Fin</label>
+            <label className="text-[11px] text-text-muted font-medium uppercase tracking-wider block mb-2">Retour</label>
             <input
               type="date"
+              lang="fr-FR"
               value={form.endDate}
               onChange={(e) => set('endDate', e.target.value)}
               className={`h-12 w-full rounded-2xl bg-bg-elevated border px-4 text-sm outline-none text-text-primary transition-colors ${
                 errors.endDate ? 'border-rose-500' : 'border-border-subtle focus:border-brand'
               }`}
             />
+            {!errors.endDate && form.endDate && (
+              <p className="text-[11px] text-text-muted mt-1.5 capitalize">{formatDateFr(form.endDate)}</p>
+            )}
             {errors.endDate && <ErrorMsg>{errors.endDate}</ErrorMsg>}
           </div>
         )}

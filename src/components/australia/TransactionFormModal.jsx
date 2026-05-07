@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { X, Save, Trash2, AlertCircle, User } from 'lucide-react'
+import { X, Save, Trash2, AlertCircle, User, ArrowLeftRight } from 'lucide-react'
 import CategoryBadge, { getCategoryConfig } from './CategoryBadge.jsx'
 import { FINAUZI_PEOPLE } from '../../config/people.js'
+import { CURRENCY_RATES } from '../../context/CurrencyContext.jsx'
 
 const CATEGORIES = [
   'housing', 'food', 'transport', 'admin', 'travel',
@@ -20,28 +21,47 @@ const EMPTY_FORM = {
   personUid: '',
 }
 
+const TRANSACTION_CURRENCIES = ['EUR', 'AUD']
+const AUD_RATE = CURRENCY_RATES.AUD.rate
+
+function formatDateFr(dateValue) {
+  if (!dateValue) return ''
+  const date = new Date(`${dateValue}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+}
+
 export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete, transaction, currentUserUid }) {
   const isEditing = !!transaction
   const [form, setForm] = useState(EMPTY_FORM)
+  const [amountCurrency, setAmountCurrency] = useState('EUR')
   const [errors, setErrors] = useState({})
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
+    const fallbackPersonUid = currentUserUid || FINAUZI_PEOPLE[0]?.uid || ''
+    const initialAmount = transaction?.amountEUR != null ? String(transaction.amountEUR) : ''
     if (transaction) {
       setForm({
         title: transaction.title,
-        amountEUR: transaction.amountEUR,
+        amountEUR: initialAmount,
         type: transaction.type,
         recurrence: transaction.recurrence,
         category: transaction.category,
         date: transaction.date,
         endDate: transaction.endDate || '',
         notes: transaction.notes || '',
-        personUid: transaction.personUid || currentUserUid || '',
+        personUid: transaction.personUid || fallbackPersonUid,
       })
     } else {
-      setForm({ ...EMPTY_FORM, personUid: currentUserUid || '' })
+      setForm({ ...EMPTY_FORM, personUid: fallbackPersonUid, amountEUR: '' })
     }
+    setAmountCurrency('EUR')
     setErrors({})
     setShowDeleteConfirm(false)
   }, [transaction, isOpen, currentUserUid])
@@ -61,14 +81,16 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
     return Object.keys(errs).length === 0
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return
+    const parsedAmount = Number(form.amountEUR)
+    const amountInEUR = amountCurrency === 'EUR' ? parsedAmount : parsedAmount / AUD_RATE
     const now = new Date().toISOString()
     const txData = {
       ...(transaction || {}),
       id: transaction?.id || undefined,
       title: form.title.trim(),
-      amountEUR: Number(form.amountEUR),
+      amountEUR: Number(amountInEUR.toFixed(2)),
       type: form.type,
       recurrence: form.recurrence,
       category: form.category,
@@ -80,13 +102,15 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
       createdAt: transaction?.createdAt || now,
       updatedAt: now,
     }
-    onSave(txData)
+    await onSave(txData)
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (showDeleteConfirm) {
-      onDelete(transaction.id)
-      onClose()
+      const ok = await onDelete(transaction.id)
+      if (ok) {
+        onClose()
+      }
     } else {
       setShowDeleteConfirm(true)
     }
@@ -95,6 +119,21 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
   const set = (key, value) => {
     setForm(prev => ({ ...prev, [key]: value }))
     if (errors[key]) setErrors(prev => ({ ...prev, [key]: undefined }))
+  }
+
+  const setAmountCurrencyWithConversion = (nextCurrency) => {
+    setAmountCurrency((prevCurrency) => {
+      if (prevCurrency === nextCurrency) return prevCurrency
+
+      setForm((prevForm) => {
+        const raw = Number(prevForm.amountEUR)
+        if (!prevForm.amountEUR || Number.isNaN(raw)) return prevForm
+        const converted = prevCurrency === 'EUR' ? raw * AUD_RATE : raw / AUD_RATE
+        return { ...prevForm, amountEUR: String(Number(converted.toFixed(2))) }
+      })
+
+      return nextCurrency
+    })
   }
 
   return (
@@ -144,18 +183,44 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
           {/* Amount */}
           <div>
             <label className="text-xs text-text-muted mb-1.5 block font-medium uppercase tracking-wider">
-              Montant (EUR) *
+              Montant ({amountCurrency}) *
             </label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.amountEUR}
-              onChange={(e) => set('amountEUR', e.target.value)}
-              placeholder="0"
-              className={`h-10 w-full rounded-xl bg-bg-elevated border px-3 text-sm outline-none tabular-nums transition-colors
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setAmountCurrencyWithConversion(amountCurrency === 'EUR' ? 'AUD' : 'EUR')}
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-text-muted hover:text-brand-glow hover:bg-brand/10 transition-colors"
+                title="Convertir EUR/AUD"
+              >
+                <ArrowLeftRight className="h-4 w-4" />
+              </button>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.amountEUR}
+                onChange={(e) => set('amountEUR', e.target.value)}
+                placeholder="0"
+                className={`h-10 w-full rounded-xl bg-bg-elevated border pl-10 pr-[84px] text-sm outline-none tabular-nums transition-colors
                 ${errors.amountEUR ? 'border-danger focus:border-danger' : 'border-border-subtle focus:border-brand'}`}
-            />
+              />
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1 p-0.5 rounded-lg border border-border-subtle bg-bg-card/80">
+                {TRANSACTION_CURRENCIES.map((currency) => (
+                  <button
+                    key={currency}
+                    type="button"
+                    onClick={() => setAmountCurrencyWithConversion(currency)}
+                    className={`h-7 px-2 rounded-md text-[10px] font-semibold transition-colors ${
+                      amountCurrency === currency
+                        ? 'bg-brand/20 text-brand-glow'
+                        : 'text-text-muted hover:text-text-primary'
+                    }`}
+                  >
+                    {currency}
+                  </button>
+                ))}
+              </div>
+            </div>
             {errors.amountEUR && (
               <p className="text-xs text-danger mt-1 flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" /> {errors.amountEUR}
@@ -282,15 +347,19 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-text-muted mb-1.5 block font-medium uppercase tracking-wider">
-                {form.recurrence === 'monthly' ? 'Date de début *' : 'Date *'}
+                {form.recurrence === 'monthly' ? 'Départ *' : 'Date *'}
               </label>
               <input
                 type="date"
+                lang="fr-FR"
                 value={form.date}
                 onChange={(e) => set('date', e.target.value)}
                 className={`h-10 w-full rounded-xl bg-bg-elevated border px-3 text-sm outline-none text-text-primary transition-colors
                   ${errors.date ? 'border-danger focus:border-danger' : 'border-border-subtle focus:border-brand'}`}
               />
+              {!errors.date && form.date && (
+                <p className="text-xs text-text-muted mt-1 capitalize">{formatDateFr(form.date)}</p>
+              )}
               {errors.date && (
                 <p className="text-xs text-danger mt-1 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" /> {errors.date}
@@ -301,15 +370,19 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
             {form.recurrence === 'monthly' && (
               <div>
                 <label className="text-xs text-text-muted mb-1.5 block font-medium uppercase tracking-wider">
-                  Date de fin
+                  Retour
                 </label>
                 <input
                   type="date"
+                  lang="fr-FR"
                   value={form.endDate}
                   onChange={(e) => set('endDate', e.target.value)}
                   className={`h-10 w-full rounded-xl bg-bg-elevated border px-3 text-sm outline-none text-text-primary transition-colors
                     ${errors.endDate ? 'border-danger focus:border-danger' : 'border-border-subtle focus:border-brand'}`}
                 />
+                {!errors.endDate && form.endDate && (
+                  <p className="text-xs text-text-muted mt-1 capitalize">{formatDateFr(form.endDate)}</p>
+                )}
                 {errors.endDate && (
                   <p className="text-xs text-danger mt-1 flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" /> {errors.endDate}

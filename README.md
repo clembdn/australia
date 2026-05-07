@@ -13,7 +13,7 @@ Built with **React + Vite + Tailwind CSS + Firebase** and designed for **Vercel*
 - 🔐 **Private access** — Only two authorized Firebase Auth users can access the app
 - 💰 **Cashflow forecasting** — 12-month projection with safety buffer and health indicators
 - 📊 **Transaction management** — Recurring and one-off transactions with full CRUD
-- 👫 **Person attribution** — Each transaction is attributed to either **Moi** or **Elle**
+- 👫 **Person attribution** — Each transaction is attributed to either **Clément** or **Lise**
 - 📱 **Mobile-first** — Premium touch-optimized interface with bottom sheet, tab navigation
 - 🖥️ **Desktop layout** — Full-featured dashboard with sidebar navigation
 - 🔄 **Real-time sync** — Firestore `onSnapshot` listeners — both users see changes instantly
@@ -162,8 +162,8 @@ couples/
 
 | UID | Label | Color |
 |-----|-------|-------|
-| `J8xOqDWZv5gEss5CBbQ7kQOsTwV2` | Moi | Emerald |
-| `o8wLosYoh7b989P9gQyZCk8tt3l1` | Elle | Blue |
+| `J8xOqDWZv5gEss5CBbQ7kQOsTwV2` | Lise | Blue |
+| `o8wLosYoh7b989P9gQyZCk8tt3l1` | Clément | Emerald |
 
 ---
 
