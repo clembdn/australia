@@ -86,7 +86,7 @@ export default function MobileOverviewTab({ data }) {
   const WarningIcon = WARNING_ICON[healthStatus]
 
   return (
-    <div className="px-4 py-5 space-y-4">
+    <div className="space-y-4">
       {/* ─── Hero Balance Card ─── */}
       <div className={`relative rounded-3xl border border-border-subtle overflow-hidden bg-gradient-to-b ${STATUS_GRADIENT[getFinalCapitalStatus()] || STATUS_GRADIENT.green}`}>
         <div className="relative z-10 px-6 pt-7 pb-6">

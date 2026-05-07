@@ -17,7 +17,7 @@ export default function MobileTransactionsTab({ data }) {
   const list = tab === 'monthly' ? recurringTxs : oneOffTxs
 
   return (
-    <div className="px-4 py-5">
+    <div className="">
       {/* Section header */}
       <h2 className="text-lg font-semibold mb-1">Transactions</h2>
       <p className="text-xs text-text-muted mb-4">

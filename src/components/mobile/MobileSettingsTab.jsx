@@ -17,7 +17,7 @@ export default function MobileSettingsTab({ data }) {
   }
 
   return (
-    <div className="px-4 py-5">
+    <div className="">
       <h2 className="text-lg font-semibold mb-1">Paramètres</h2>
       <p className="text-xs text-text-muted mb-6">Configuration FinAuzi</p>
 

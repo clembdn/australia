@@ -30,7 +30,7 @@ export default function AustraliaView() {
   return (
     <>
       {/* ─── Mobile: shown only on small screens ─── */}
-      <div className="lg:hidden -mx-4 sm:-mx-6 -my-6">
+      <div className="lg:hidden py-3">
         <MobileAustraliaView data={data} />
       </div>
 

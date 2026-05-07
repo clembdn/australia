@@ -30,10 +30,10 @@ export default function MobileAustraliaView({ data }) {
   } = data
 
   return (
-    <div className="min-h-screen bg-bg-base flex flex-col relative">
+    <div className="min-h-screen flex flex-col relative px-3">
       {/* ─── Sticky Header ─── */}
-      <header className="sticky top-0 z-30 bg-bg-base/80 backdrop-blur-xl border-b border-border-subtle/50">
-        <div className="flex items-center justify-between px-5 h-14">
+      <header className="sticky top-3 z-30 bg-bg-elevated/85 backdrop-blur-xl border border-border-subtle/70 rounded-2xl shadow-card">
+        <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-2">
             <Plane className="h-5 w-5 text-brand-glow" />
             <span className="font-semibold text-sm tracking-tight">FinAuzi</span>
@@ -59,7 +59,7 @@ export default function MobileAustraliaView({ data }) {
       </header>
 
       {/* ─── Tab Content ─── */}
-      <main className="flex-1 overflow-y-auto pb-24">
+      <main className="flex-1 overflow-y-auto pt-3 pb-[calc(92px+env(safe-area-inset-bottom))]">
         {activeTab === 'overview' && <MobileOverviewTab data={data} />}
         {activeTab === 'transactions' && <MobileTransactionsTab data={data} />}
         {activeTab === 'settings' && <MobileSettingsTab data={data} />}
@@ -69,7 +69,7 @@ export default function MobileAustraliaView({ data }) {
       {activeTab !== 'settings' && (
         <button
           onClick={openCreateModal}
-          className="fixed bottom-24 right-5 z-40 h-14 w-14 rounded-2xl bg-brand text-white shadow-glow flex items-center justify-center transition-all active:scale-95 hover:shadow-[0_0_0_1px_rgba(45,127,249,0.5),0_12px_32px_-8px_rgba(45,127,249,0.5)]"
+          className="fixed bottom-[calc(88px+env(safe-area-inset-bottom))] right-6 z-40 h-14 w-14 rounded-2xl bg-brand text-white shadow-glow border border-white/10 flex items-center justify-center transition-all active:scale-95 hover:shadow-[0_0_0_1px_rgba(45,127,249,0.5),0_12px_32px_-8px_rgba(45,127,249,0.5)]"
           aria-label="Ajouter une transaction"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -80,8 +80,8 @@ export default function MobileAustraliaView({ data }) {
       )}
 
       {/* ─── Bottom Navigation ─── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-bg-elevated/90 backdrop-blur-xl border-t border-border-subtle/60 pb-[env(safe-area-inset-bottom)]">
-        <div className="flex items-center justify-around h-16">
+      <nav className="fixed bottom-3 left-3 right-3 z-30 bg-bg-elevated/92 backdrop-blur-xl border border-border-subtle/70 rounded-2xl shadow-card pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-around h-16 px-1">
           {TABS.map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
