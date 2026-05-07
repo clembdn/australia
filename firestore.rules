@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Only these two UIDs can access the shared couple space.
+    function isAuthorizedUser() {
+      return request.auth != null
+        && (
+          request.auth.uid == "J8xOqDWZv5gEss5CBbQ7kQOsTwV2"
+          || request.auth.uid == "o8wLosYoh7b989P9gQyZCk8tt3l1"
+        );
+    }
+
+    function isValidPersonUid(personUid) {
+      return personUid == "J8xOqDWZv5gEss5CBbQ7kQOsTwV2"
+        || personUid == "o8wLosYoh7b989P9gQyZCk8tt3l1";
+    }
+
+    // Transactions
+    match /couples/main/transactions/{transactionId} {
+      allow read: if isAuthorizedUser();
+
+      allow create: if isAuthorizedUser()
+        && isValidPersonUid(request.resource.data.personUid)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.updatedBy == request.auth.uid;
+
+      allow update: if isAuthorizedUser()
+        && isValidPersonUid(request.resource.data.personUid)
+        && request.resource.data.updatedBy == request.auth.uid;
+
+      allow delete: if isAuthorizedUser();
+    }
+
+    // Settings
+    match /couples/main/settings/{settingsId} {
+      allow read: if isAuthorizedUser();
+
+      allow create, update: if isAuthorizedUser()
+        && request.resource.data.updatedBy == request.auth.uid;
+
+      allow delete: if false;
+    }
+
+    // Migrations
+    match /couples/main/migrations/{migrationId} {
+      allow read: if isAuthorizedUser();
+
+      allow create, update: if isAuthorizedUser();
+
+      allow delete: if false;
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

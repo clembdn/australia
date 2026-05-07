@@ -1,13 +1,16 @@
-import { Globe2, Plane, LineChart, Settings, X, Wallet } from 'lucide-react'
+import { Plane, Settings, LogOut, User } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { getPersonByUid } from '../../config/people.js'
 
 const NAV = [
-  { id: 'global', label: 'Vue Globale', icon: Globe2 },
-  { id: 'australia', label: 'Mission Australie', icon: Plane },
-  { id: 'pea', label: 'Suivi PEA', icon: LineChart },
+  { id: 'australia', label: 'Trésorerie', icon: Plane },
   { id: 'settings', label: 'Paramètres', icon: Settings },
 ]
 
 export default function Sidebar({ active, onSelect, mobileOpen, onCloseMobile }) {
+  const { currentUser, logout } = useAuth()
+  const person = currentUser ? getPersonByUid(currentUser.uid) : null
+
   return (
     <>
       {mobileOpen && (
@@ -24,17 +27,19 @@ export default function Sidebar({ active, onSelect, mobileOpen, onCloseMobile })
         <div className="flex h-16 items-center justify-between px-5 border-b border-border-subtle">
           <div className="flex items-center gap-2">
             <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand/15 border border-brand/30">
-              <Wallet className="h-4 w-4 text-brand-glow" />
+              <Plane className="h-4 w-4 text-brand-glow" />
             </div>
-            <span className="font-semibold tracking-tight">Atlas</span>
-            <span className="text-text-muted text-xs">Finance</span>
+            <span className="font-semibold tracking-tight">FinAuzi</span>
           </div>
           <button
             onClick={onCloseMobile}
             className="lg:hidden rounded-md p-1.5 text-text-secondary hover:bg-bg-hover"
             aria-label="Close menu"
           >
-            <X className="h-4 w-4" />
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
@@ -57,13 +62,27 @@ export default function Sidebar({ active, onSelect, mobileOpen, onCloseMobile })
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border-subtle">
           <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-brand to-brand-dim text-sm font-semibold">
-              CB
+            <div className={`grid h-9 w-9 place-items-center rounded-full text-sm font-semibold ${person?.bg || 'bg-gradient-to-br from-brand to-brand-dim'} border ${person?.border || 'border-brand/20'}`}>
+              <User className={`h-4 w-4 ${person?.text || 'text-white'}`} />
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate">C. Boudon</p>
-              <p className="text-xs text-text-muted truncate">Compte personnel</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium truncate flex items-center gap-1.5">
+                {person?.label || 'Utilisateur'}
+                {person && (
+                  <span className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-semibold ${person.bg} ${person.text} border ${person.border}`}>
+                    {person.shortLabel}
+                  </span>
+                )}
+              </p>
+              <p className="text-xs text-text-muted truncate">{currentUser?.email}</p>
             </div>
+            <button
+              onClick={logout}
+              className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+              title="Se déconnecter"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </aside>

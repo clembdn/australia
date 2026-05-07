@@ -1,18 +1,10 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   Plane, Calendar, Plus, RefreshCw, ArrowUpDown,
-  TrendingUp, Wallet, Timer, ArrowDownCircle,
+  TrendingUp, Wallet, Timer, ArrowDownCircle, Users,
 } from 'lucide-react'
-import { useCurrency } from '../context/CurrencyContext.jsx'
-import { defaultTransactions } from '../data/defaultTransactions.js'
-import {
-  getForecastData,
-  getMonthlyNetCashflow,
-  getRunway,
-  getLowestBalance,
-  getFinalProjectedCapital,
-  getHealthStatus,
-} from '../utils/cashflow.js'
+
+import { useAustraliaData } from '../hooks/useAustraliaData.js'
+import { useAuth } from '../context/AuthContext.jsx'
 
 import SummaryCard from '../components/australia/SummaryCard.jsx'
 import WarningBanner from '../components/australia/WarningBanner.jsx'
@@ -20,193 +12,92 @@ import ForecastChart from '../components/australia/ForecastChart.jsx'
 import TransactionFormModal from '../components/australia/TransactionFormModal.jsx'
 import TransactionRow from '../components/australia/TransactionRow.jsx'
 import SafetyBufferControl from '../components/australia/SafetyBufferControl.jsx'
+import PersonBreakdown from '../components/australia/PersonBreakdown.jsx'
+import MobileAustraliaView from '../components/mobile/MobileAustraliaView.jsx'
+import ImportBanner from '../components/migration/ImportBanner.jsx'
 
-// ─── Constants ───
-const TX_STORAGE_KEY = 'atlas_finance_mission_australie_transactions'
-const SETTINGS_STORAGE_KEY = 'atlas_finance_mission_australie_settings'
-const DEFAULT_INITIAL_CAPITAL = 10000
-const DEFAULT_SAFETY_BUFFER = 1500
-
-// ─── Persistence helpers ───
-function loadTransactions() {
-  try {
-    const raw = localStorage.getItem(TX_STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
-  } catch {}
-  return null
-}
-
-function saveTransactions(txs) {
-  try {
-    localStorage.setItem(TX_STORAGE_KEY, JSON.stringify(txs))
-  } catch {}
-}
-
-function loadSettings() {
-  try {
-    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
-  } catch {}
-  return null
-}
-
-function saveSettings(settings) {
-  try {
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings))
-  } catch {}
-}
-
-// ─── Main View ───
 export default function AustraliaView() {
-  const { format } = useCurrency()
+  const data = useAustraliaData()
 
-  // State: transactions
-  const [transactions, setTransactions] = useState(() => {
-    return loadTransactions() || [...defaultTransactions]
-  })
-
-  // State: settings (safety buffer, initial capital)
-  const [settings, setSettings] = useState(() => {
-    return loadSettings() || {
-      safetyBuffer: DEFAULT_SAFETY_BUFFER,
-      initialCapital: DEFAULT_INITIAL_CAPITAL,
-    }
-  })
-
-  // State: modal
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingTx, setEditingTx] = useState(null)
-
-  // Persist on change
-  useEffect(() => saveTransactions(transactions), [transactions])
-  useEffect(() => saveSettings(settings), [settings])
-
-  // ─── Transaction CRUD ───
-  const handleSave = useCallback((tx) => {
-    setTransactions(prev => {
-      const idx = prev.findIndex(t => t.id === tx.id)
-      if (idx >= 0) {
-        const updated = [...prev]
-        updated[idx] = tx
-        return updated
-      }
-      return [...prev, tx]
-    })
-    setModalOpen(false)
-    setEditingTx(null)
-  }, [])
-
-  const handleDelete = useCallback((id) => {
-    setTransactions(prev => prev.filter(t => t.id !== id))
-    setModalOpen(false)
-    setEditingTx(null)
-  }, [])
-
-  const handleTogglePause = useCallback((id) => {
-    setTransactions(prev =>
-      prev.map(t => t.id === id ? { ...t, isActive: !t.isActive, updatedAt: new Date().toISOString() } : t)
+  if (data.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <span className="inline-block h-6 w-6 border-2 border-brand/30 border-t-brand-glow rounded-full animate-spin" />
+      </div>
     )
-  }, [])
-
-  const openCreateModal = () => {
-    setEditingTx(null)
-    setModalOpen(true)
-  }
-
-  const openEditModal = (tx) => {
-    setEditingTx(tx)
-    setModalOpen(true)
-  }
-
-  // ─── Derived Data ───
-  const recurringTxs = useMemo(
-    () => transactions.filter(t => t.recurrence === 'monthly').sort((a, b) => {
-      // Sort incomes first, then by title
-      if (a.type !== b.type) return a.type === 'income' ? -1 : 1
-      return a.title.localeCompare(b.title)
-    }),
-    [transactions]
-  )
-
-  const oneOffTxs = useMemo(
-    () => transactions.filter(t => t.recurrence === 'one-off').sort((a, b) => {
-      return new Date(a.date) - new Date(b.date)
-    }),
-    [transactions]
-  )
-
-  const forecastData = useMemo(
-    () => getForecastData(transactions, settings.initialCapital),
-    [transactions, settings.initialCapital]
-  )
-
-  const monthlyCashflow = useMemo(
-    () => getMonthlyNetCashflow(transactions),
-    [transactions]
-  )
-
-  const runway = useMemo(() => getRunway(forecastData), [forecastData])
-  const lowestBalance = useMemo(() => getLowestBalance(forecastData), [forecastData])
-  const finalCapital = useMemo(() => getFinalProjectedCapital(forecastData), [forecastData])
-  const healthStatus = useMemo(
-    () => getHealthStatus(forecastData, settings.safetyBuffer),
-    [forecastData, settings.safetyBuffer]
-  )
-
-  // ─── Status helpers ───
-  const getCashflowStatus = () => {
-    if (monthlyCashflow.netCashflow > 0) return 'green'
-    if (monthlyCashflow.netCashflow < 0) return 'red'
-    return 'neutral'
-  }
-
-  const getFinalCapitalStatus = () => {
-    if (finalCapital > settings.safetyBuffer) return 'green'
-    if (finalCapital > 0) return 'orange'
-    return 'red'
-  }
-
-  const getRunwayLabel = () => {
-    if (runway === null) return '12+ mois'
-    if (runway <= 2) return 'Critique'
-    return `${runway} mois`
-  }
-
-  const getRunwayStatus = () => {
-    if (runway === null) return 'green'
-    if (runway <= 2) return 'red'
-    if (runway <= 5) return 'orange'
-    return 'green'
-  }
-
-  const getLowestStatus = () => {
-    if (lowestBalance.amount > settings.safetyBuffer) return 'green'
-    if (lowestBalance.amount > 0) return 'orange'
-    return 'red'
   }
 
   return (
+    <>
+      {/* ─── Mobile: shown only on small screens ─── */}
+      <div className="lg:hidden -mx-4 sm:-mx-6 -my-6">
+        <MobileAustraliaView data={data} />
+      </div>
+
+      {/* ─── Desktop: hidden on small screens ─── */}
+      <div className="hidden lg:block">
+        <DesktopAustraliaView data={data} />
+      </div>
+    </>
+  )
+}
+
+// ─── Desktop Dashboard ───
+function DesktopAustraliaView({ data }) {
+  const { currentUser } = useAuth()
+  const {
+    format,
+    settings,
+    modalOpen,
+    editingTx,
+    transactions,
+    recurringTxs,
+    oneOffTxs,
+    forecastData,
+    monthlyCashflow,
+    lowestBalance,
+    finalCapital,
+    healthStatus,
+    personBreakdown,
+    handleSave,
+    handleDelete,
+    handleTogglePause,
+    openCreateModal,
+    openEditModal,
+    closeModal,
+    setSafetyBuffer,
+    getCashflowStatus,
+    getFinalCapitalStatus,
+    getRunwayLabel,
+    getRunwayStatus,
+    getLowestStatus,
+  } = data
+
+  return (
     <div className="space-y-6">
+      {/* Import banner for legacy data */}
+      <ImportBanner />
+
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-            <Plane className="h-6 w-6 text-brand-glow" /> Mission Australie
+            <Plane className="h-6 w-6 text-brand-glow" /> FinAuzi
           </h1>
           <p className="text-sm text-text-secondary">
-            Cashflow prévisionnel et gestion des transactions pour l'année en Australie.
+            Notre trésorerie pour l'Australie
           </p>
         </div>
         <div className="flex items-center gap-2">
           <SafetyBufferControl
             value={settings.safetyBuffer}
-            onChange={(v) => setSettings(prev => ({ ...prev, safetyBuffer: v }))}
+            onChange={setSafetyBuffer}
             format={format}
           />
         </div>
       </div>
 
-      {/* ─── Summary Cards ─── */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <SummaryCard
           icon={ArrowUpDown}
@@ -234,9 +125,9 @@ export default function AustraliaView() {
           icon={Timer}
           label="Runway"
           value={getRunwayLabel()}
-          subtitle={runway === null
+          subtitle={data.runway === null
             ? 'Le capital ne s\'épuise pas sur 12 mois'
-            : `Capital épuisé au mois ${runway}`
+            : `Capital épuisé au mois ${data.runway}`
           }
           status={getRunwayStatus()}
         />
@@ -249,10 +140,21 @@ export default function AustraliaView() {
         />
       </div>
 
-      {/* ─── Warning Banner ─── */}
+      {/* Warning Banner */}
       <WarningBanner status={healthStatus} />
 
-      {/* ─── Forecast Chart ─── */}
+      {/* Person Breakdown */}
+      {personBreakdown && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="h-4 w-4 text-text-muted" />
+            <p className="stat-label">Répartition par personne</p>
+          </div>
+          <PersonBreakdown personBreakdown={personBreakdown} format={format} />
+        </section>
+      )}
+
+      {/* Forecast Chart */}
       <section className="card">
         <header className="flex items-center justify-between mb-4">
           <div>
@@ -271,7 +173,7 @@ export default function AustraliaView() {
         />
       </section>
 
-      {/* ─── Transaction Manager ─── */}
+      {/* Transaction Manager */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Gestion des transactions</h2>
@@ -289,7 +191,7 @@ export default function AustraliaView() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* ─── List A: Mensualités Actives ─── */}
+        {/* Recurring */}
         <section className="card">
           <header className="flex items-center justify-between mb-4">
             <div>
@@ -323,7 +225,7 @@ export default function AustraliaView() {
           )}
         </section>
 
-        {/* ─── List B: Dépenses/Gains Occasionnels ─── */}
+        {/* One-off */}
         <section className="card">
           <header className="flex items-center justify-between mb-4">
             <div>
@@ -357,13 +259,14 @@ export default function AustraliaView() {
         </section>
       </div>
 
-      {/* ─── Transaction Form Modal ─── */}
+      {/* Transaction Form Modal */}
       <TransactionFormModal
         isOpen={modalOpen}
-        onClose={() => { setModalOpen(false); setEditingTx(null) }}
+        onClose={closeModal}
         onSave={handleSave}
         onDelete={handleDelete}
         transaction={editingTx}
+        currentUserUid={currentUser?.uid}
       />
     </div>
   )

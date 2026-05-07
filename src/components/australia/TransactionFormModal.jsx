@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { X, Save, Trash2, AlertCircle } from 'lucide-react'
+import { X, Save, Trash2, AlertCircle, User } from 'lucide-react'
 import CategoryBadge, { getCategoryConfig } from './CategoryBadge.jsx'
+import { FINAUZI_PEOPLE } from '../../config/people.js'
 
 const CATEGORIES = [
   'housing', 'food', 'transport', 'admin', 'travel',
@@ -16,9 +17,10 @@ const EMPTY_FORM = {
   date: new Date().toISOString().slice(0, 10),
   endDate: '',
   notes: '',
+  personUid: '',
 }
 
-export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete, transaction }) {
+export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete, transaction, currentUserUid }) {
   const isEditing = !!transaction
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
@@ -35,13 +37,14 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
         date: transaction.date,
         endDate: transaction.endDate || '',
         notes: transaction.notes || '',
+        personUid: transaction.personUid || currentUserUid || '',
       })
     } else {
-      setForm(EMPTY_FORM)
+      setForm({ ...EMPTY_FORM, personUid: currentUserUid || '' })
     }
     setErrors({})
     setShowDeleteConfirm(false)
-  }, [transaction, isOpen])
+  }, [transaction, isOpen, currentUserUid])
 
   if (!isOpen) return null
 
@@ -50,6 +53,7 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
     if (!form.title.trim()) errs.title = 'Le titre est requis'
     if (!form.amountEUR || Number(form.amountEUR) <= 0) errs.amountEUR = 'Le montant doit être supérieur à 0'
     if (!form.date) errs.date = 'La date est requise'
+    if (!form.personUid) errs.personUid = 'La personne est requise'
     if (form.recurrence === 'monthly' && form.endDate && form.endDate < form.date) {
       errs.endDate = 'La date de fin doit être après la date de début'
     }
@@ -62,7 +66,7 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
     const now = new Date().toISOString()
     const txData = {
       ...(transaction || {}),
-      id: transaction?.id || `tx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: transaction?.id || undefined,
       title: form.title.trim(),
       amountEUR: Number(form.amountEUR),
       type: form.type,
@@ -72,6 +76,7 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
       endDate: form.recurrence === 'monthly' && form.endDate ? form.endDate : null,
       notes: form.notes.trim() || null,
       isActive: transaction?.isActive ?? true,
+      personUid: form.personUid,
       createdAt: transaction?.createdAt || now,
       updatedAt: now,
     }
@@ -154,6 +159,34 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
             {errors.amountEUR && (
               <p className="text-xs text-danger mt-1 flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" /> {errors.amountEUR}
+              </p>
+            )}
+          </div>
+
+          {/* Person selector */}
+          <div>
+            <label className="text-xs text-text-muted mb-1.5 block font-medium uppercase tracking-wider">
+              Personne *
+            </label>
+            <div className="flex p-0.5 rounded-xl bg-bg-elevated border border-border-subtle">
+              {FINAUZI_PEOPLE.map(person => (
+                <button
+                  key={person.uid}
+                  onClick={() => set('personUid', person.uid)}
+                  className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                    form.personUid === person.uid
+                      ? `${person.bg} ${person.text} shadow-sm`
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <User className="h-3.5 w-3.5" />
+                  {person.label}
+                </button>
+              ))}
+            </div>
+            {errors.personUid && (
+              <p className="text-xs text-danger mt-1 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> {errors.personUid}
               </p>
             )}
           </div>

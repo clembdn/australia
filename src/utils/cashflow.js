@@ -1,5 +1,6 @@
-// Cashflow Forecasting Engine — Pure utility functions
-// All amounts are in EUR. Display conversion is handled at the component level.
+// FinAuzi — Cashflow Forecasting Engine
+// Pure utility functions. All amounts are in EUR.
+// Display conversion is handled at the component level.
 
 /**
  * Generate an array of the next N months starting from a base date.
@@ -199,4 +200,82 @@ export function getHealthStatus(forecastData, safetyBuffer) {
   if (belowZero) return 'red'
   if (belowBuffer) return 'orange'
   return 'green'
+}
+
+// ─── Person-based calculation helpers ───
+
+/**
+ * Get monthly net cashflow for a specific person.
+ */
+export function getMonthlyNetCashflowByPerson(transactions, personUid) {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth()
+
+  let totalIncome = 0
+  let totalExpenses = 0
+
+  for (const tx of transactions) {
+    if (tx.personUid !== personUid) continue
+    if (tx.recurrence !== 'monthly') continue
+    if (!isTransactionActiveForMonth(tx, year, month)) continue
+
+    if (tx.type === 'income') {
+      totalIncome += tx.amountEUR
+    } else {
+      totalExpenses += tx.amountEUR
+    }
+  }
+
+  return {
+    totalIncome,
+    totalExpenses,
+    netCashflow: totalIncome - totalExpenses,
+  }
+}
+
+/**
+ * Get the total one-off impact for a specific person over the forecast period.
+ */
+export function getOneOffImpactByPerson(transactions, personUid, monthCount = 12) {
+  const months = generateNextMonths(monthCount)
+  let totalIncome = 0
+  let totalExpenses = 0
+
+  for (const m of months) {
+    for (const tx of transactions) {
+      if (tx.personUid !== personUid) continue
+      if (tx.recurrence !== 'one-off') continue
+      if (!isOneOffInMonth(tx, m.year, m.month)) continue
+
+      if (tx.type === 'income') totalIncome += tx.amountEUR
+      else totalExpenses += tx.amountEUR
+    }
+  }
+
+  return {
+    totalIncome,
+    totalExpenses,
+    netOneOff: totalIncome - totalExpenses,
+  }
+}
+
+/**
+ * Get a full breakdown by person.
+ * Returns an object with each personUid mapped to their cashflow summary.
+ */
+export function getPersonBreakdown(transactions, personUids) {
+  const breakdown = {}
+
+  for (const uid of personUids) {
+    const monthly = getMonthlyNetCashflowByPerson(transactions, uid)
+    const oneOff = getOneOffImpactByPerson(transactions, uid)
+    breakdown[uid] = {
+      monthly,
+      oneOff,
+      totalNet: monthly.netCashflow + oneOff.netOneOff,
+    }
+  }
+
+  return breakdown
 }
