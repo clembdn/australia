@@ -17,18 +17,66 @@ service cloud.firestore {
         || personUid == "o8wLosYoh7b989P9gQyZCk8tt3l1";
     }
 
+    function isValidUserMetadata(data) {
+      return isValidPersonUid(data.createdBy)
+        && isValidPersonUid(data.updatedBy)
+        && data.updatedBy == request.auth.uid;
+    }
+
+    function isValidSplit(split) {
+      return split is map
+        && split.keys().hasOnly(["personUid", "percentage"])
+        && isValidPersonUid(split.personUid)
+        && split.percentage is number
+        && split.percentage >= 0
+        && split.percentage <= 100;
+    }
+
+    function isValidSingleAllocation(data) {
+      return data.splits.size() == 1
+        && isValidSplit(data.splits[0])
+        && data.splits[0].percentage == 100;
+    }
+
+    function isValidSharedAllocation(data) {
+      return data.splits.size() == 2
+        && isValidSplit(data.splits[0])
+        && isValidSplit(data.splits[1])
+        && data.splits[0].personUid != data.splits[1].personUid
+        && (data.splits[0].percentage + data.splits[1].percentage) == 100;
+    }
+
+    function isValidSplitAllocation(data) {
+      return data.allocationType is string
+        && (data.allocationType == "single" || data.allocationType == "shared")
+        && data.splits is list
+        && (
+          (data.allocationType == "single" && isValidSingleAllocation(data))
+          || (data.allocationType == "shared" && isValidSharedAllocation(data))
+        );
+    }
+
+    function isValidLegacyAllocation(data) {
+      return data.personUid is string
+        && isValidPersonUid(data.personUid);
+    }
+
+    function isValidTransactionAllocation(data) {
+      return isValidSplitAllocation(data) || isValidLegacyAllocation(data);
+    }
+
     // Transactions
     match /couples/main/transactions/{transactionId} {
       allow read: if isAuthorizedUser();
 
       allow create: if isAuthorizedUser()
-        && isValidPersonUid(request.resource.data.personUid)
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.updatedBy == request.auth.uid;
+        && isValidTransactionAllocation(request.resource.data)
+        && isValidUserMetadata(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid;
 
       allow update: if isAuthorizedUser()
-        && isValidPersonUid(request.resource.data.personUid)
-        && request.resource.data.updatedBy == request.auth.uid;
+        && isValidTransactionAllocation(request.resource.data)
+        && isValidUserMetadata(request.resource.data);
 
       allow delete: if isAuthorizedUser();
     }

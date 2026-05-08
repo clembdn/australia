@@ -57,10 +57,11 @@ export function useAustraliaData() {
       },
       () => {
         setIsLoadingTx(false)
-      }
+      },
+      defaultPersonUid
     )
     return unsub
-  }, [uid])
+  }, [uid, defaultPersonUid])
 
   useEffect(() => {
     if (!uid) {
@@ -98,10 +99,10 @@ export function useAustraliaData() {
       if (tx.id && transactions.some(t => t.id === tx.id)) {
         // Update existing
         const { id, ...updates } = tx
-        await updateTransaction(id, updates, uid)
+        await updateTransaction(id, updates, uid, defaultPersonUid)
       } else {
         // Create new
-        await createTransaction(tx, uid)
+        await createTransaction(tx, uid, defaultPersonUid)
       }
       setModalOpen(false)
       setEditingTx(null)
@@ -113,11 +114,12 @@ export function useAustraliaData() {
         name: err?.name,
         uid,
         transactionId: tx?.id ?? null,
-        personUid: tx?.personUid ?? null,
+        allocationType: tx?.allocationType ?? null,
+        splits: tx?.splits ?? null,
       }, err)
       return false
     }
-  }, [uid, transactions])
+  }, [uid, transactions, defaultPersonUid])
 
   const handleDelete = useCallback(async (id) => {
     try {
@@ -141,11 +143,11 @@ export function useAustraliaData() {
     const tx = transactions.find(t => t.id === id)
     if (!tx) return
     try {
-      await toggleTransactionActive(id, tx.isActive, uid)
+      await toggleTransactionActive(tx, uid, defaultPersonUid)
     } catch (err) {
       console.error('[FinAuzi] Failed to toggle pause:', err)
     }
-  }, [transactions, uid])
+  }, [transactions, uid, defaultPersonUid])
 
   const openCreateModal = useCallback(() => {
     setEditingTx(null)

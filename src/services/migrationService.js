@@ -4,6 +4,10 @@ import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createTransaction } from './transactionService.js'
 import { updateSettings, DEFAULT_SETTINGS } from './settingsService.js'
+import {
+  ALLOCATION_TYPES,
+  normalizeTransactionAllocation,
+} from '../utils/transactionAllocation.js'
 
 // All known localStorage keys from previous versions of the app
 const LEGACY_TX_KEYS = [
@@ -117,6 +121,7 @@ export async function importLegacyLocalStorageData(legacyData, currentUid, defau
     // Build a deterministic ID to avoid duplicates
     const legacyId = tx.id || `legacy-${tx.title}-${tx.amountEUR || tx.amount}-${tx.date}`
 
+    const allocation = normalizeTransactionAllocation(tx, defaultPersonUid)
     const cleaned = {
       id: legacyId,
       title: tx.title || 'Transaction importée',
@@ -128,7 +133,11 @@ export async function importLegacyLocalStorageData(legacyData, currentUid, defau
       endDate: tx.endDate || null,
       notes: tx.notes || null,
       isActive: tx.isActive ?? true,
-      personUid: tx.personUid || defaultPersonUid,
+      allocationType: allocation.allocationType,
+      splits: allocation.splits,
+      personUid: allocation.allocationType === ALLOCATION_TYPES.SINGLE
+        ? allocation.splits[0].personUid
+        : null,
       createdAt: tx.createdAt || now,
       createdBy: currentUid,
       updatedAt: now,

@@ -1,13 +1,18 @@
 import { Pencil, Trash2, Pause, Play, Calendar } from 'lucide-react'
 import CategoryBadge from './CategoryBadge.jsx'
 import { getPersonByUid } from '../../config/people.js'
+import { ALLOCATION_TYPES, getAllocationDisplay } from '../../utils/transactionAllocation.js'
 
 export default function TransactionRow({ transaction, onEdit, onDelete, onTogglePause, format }) {
-  const { title, amountEUR, type, recurrence, category, date, endDate, isActive, notes, personUid } = transaction
+  const { title, amountEUR, type, recurrence, category, date, endDate, isActive, notes } = transaction
   const isIncome = type === 'income'
   const isRecurring = recurrence === 'monthly'
   const isPaused = !isActive
-  const person = getPersonByUid(personUid)
+  const allocation = getAllocationDisplay(transaction)
+  const person = allocation.singlePersonUid ? getPersonByUid(allocation.singlePersonUid) : null
+  const allocationBadgeClasses = allocation.allocationType === ALLOCATION_TYPES.SHARED
+    ? 'bg-purple-500/15 text-purple-300 border border-purple-500/25'
+    : `${person?.bg || 'bg-bg-elevated'} ${person?.text || 'text-text-primary'} border ${person?.border || 'border-border-subtle'}`
 
   const formattedDate = new Date(date).toLocaleDateString('fr-FR', {
     day: 'numeric',
@@ -43,10 +48,10 @@ export default function TransactionRow({ transaction, onEdit, onDelete, onToggle
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          {/* Person badge */}
-          {person && (
-            <span className={`inline-flex items-center px-1.5 py-0 rounded-full text-[10px] font-semibold ${person.bg} ${person.text} border ${person.border}`}>
-              {person.shortLabel}
+          {/* Allocation badge */}
+          {(allocation.allocationType === ALLOCATION_TYPES.SHARED || person) && (
+            <span className={`inline-flex items-center px-1.5 py-0 rounded-full text-[10px] font-semibold ${allocationBadgeClasses}`}>
+              {allocation.label}
             </span>
           )}
           <span className="text-xs text-text-muted flex items-center gap-1">

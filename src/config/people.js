@@ -1,15 +1,15 @@
 // FinAuzi — Person Configuration & Helpers
 // Maps Firebase UIDs to display labels and colors.
 
-export const CLEMENT_UID = 'o8wLosYoh7b989P9gQyZCk8tt3l1'
-export const LISE_UID = 'J8xOqDWZv5gEss5CBbQ7kQOsTwV2'
+export const CLEMENT_UID = 'J8xOqDWZv5gEss5CBbQ7kQOsTwV2'
+export const LISE_UID = 'o8wLosYoh7b989P9gQyZCk8tt3l1'
 
 export const AUTHORIZED_UIDS = [
   CLEMENT_UID,
   LISE_UID,
 ]
 
-export const FINAUZI_PEOPLE = [
+export const PEOPLE = [
   {
     uid: CLEMENT_UID,
     label: 'Clément',
@@ -29,6 +29,8 @@ export const FINAUZI_PEOPLE = [
     border: 'border-blue-500/25',
   },
 ]
+
+export const FINAUZI_PEOPLE = PEOPLE
 
 const EMAIL_TO_PERSON_UID = {
   'clemboudon06@gmail.com': CLEMENT_UID,

@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react'
-import { X, Save, Trash2, AlertCircle, User, ArrowLeftRight } from 'lucide-react'
-import CategoryBadge, { getCategoryConfig } from './CategoryBadge.jsx'
-import { FINAUZI_PEOPLE } from '../../config/people.js'
+import { X, Save, Trash2, AlertCircle, RotateCcw, ArrowLeftRight } from 'lucide-react'
+import { getCategoryConfig } from './CategoryBadge.jsx'
+import { CLEMENT_UID, FINAUZI_PEOPLE } from '../../config/people.js'
 import { CURRENCY_RATES } from '../../context/CurrencyContext.jsx'
+import {
+  ALLOCATION_TYPES,
+  clampPercentage,
+  createSharedAllocation,
+  createSingleAllocation,
+  getSplitPercentageForPerson,
+  getTransactionAllocationValidationError,
+  normalizeTransactionAllocation,
+} from '../../utils/transactionAllocation.js'
 
 const CATEGORIES = [
   'housing', 'food', 'transport', 'admin', 'travel',
@@ -18,7 +27,8 @@ const EMPTY_FORM = {
   date: new Date().toISOString().slice(0, 10),
   endDate: '',
   notes: '',
-  personUid: '',
+  allocationType: ALLOCATION_TYPES.SINGLE,
+  splits: [],
 }
 
 const TRANSACTION_CURRENCIES = ['EUR', 'AUD']
@@ -47,6 +57,7 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
     const fallbackPersonUid = currentUserUid || FINAUZI_PEOPLE[0]?.uid || ''
     const initialAmount = transaction?.amountEUR != null ? String(transaction.amountEUR) : ''
     if (transaction) {
+      const allocation = normalizeTransactionAllocation(transaction, fallbackPersonUid)
       setForm({
         title: transaction.title,
         amountEUR: initialAmount,
@@ -56,10 +67,15 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
         date: transaction.date,
         endDate: transaction.endDate || '',
         notes: transaction.notes || '',
-        personUid: transaction.personUid || fallbackPersonUid,
+        allocationType: allocation.allocationType,
+        splits: allocation.splits,
       })
     } else {
-      setForm({ ...EMPTY_FORM, personUid: fallbackPersonUid, amountEUR: '' })
+      setForm({
+        ...EMPTY_FORM,
+        ...createSingleAllocation(fallbackPersonUid, fallbackPersonUid),
+        amountEUR: '',
+      })
     }
     setAmountCurrency('EUR')
     setErrors({})
@@ -73,7 +89,8 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
     if (!form.title.trim()) errs.title = 'Le titre est requis'
     if (!form.amountEUR || Number(form.amountEUR) <= 0) errs.amountEUR = 'Le montant doit être supérieur à 0'
     if (!form.date) errs.date = 'La date est requise'
-    if (!form.personUid) errs.personUid = 'La personne est requise'
+    const allocationError = getTransactionAllocationValidationError(form.allocationType, form.splits)
+    if (allocationError) errs.allocation = allocationError
     if (form.recurrence === 'monthly' && form.endDate && form.endDate < form.date) {
       errs.endDate = 'La date de fin doit être après la date de début'
     }
@@ -86,6 +103,7 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
     const parsedAmount = Number(form.amountEUR)
     const amountInEUR = amountCurrency === 'EUR' ? parsedAmount : parsedAmount / AUD_RATE
     const now = new Date().toISOString()
+    const allocation = normalizeTransactionAllocation(form, currentUserUid)
     const txData = {
       ...(transaction || {}),
       id: transaction?.id || undefined,
@@ -98,7 +116,11 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
       endDate: form.recurrence === 'monthly' && form.endDate ? form.endDate : null,
       notes: form.notes.trim() || null,
       isActive: transaction?.isActive ?? true,
-      personUid: form.personUid,
+      allocationType: allocation.allocationType,
+      splits: allocation.splits,
+      personUid: allocation.allocationType === ALLOCATION_TYPES.SINGLE
+        ? allocation.splits[0].personUid
+        : null,
       createdAt: transaction?.createdAt || now,
       updatedAt: now,
     }
@@ -134,6 +156,33 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
 
       return nextCurrency
     })
+  }
+
+  const allocation = normalizeTransactionAllocation(form, currentUserUid)
+  const clementSplit = getSplitPercentageForPerson(allocation, CLEMENT_UID)
+  const liseSplit = 100 - clementSplit
+
+  const selectSingleAllocation = (personUid) => {
+    setForm(prev => ({ ...prev, ...createSingleAllocation(personUid, currentUserUid) }))
+    if (errors.allocation) setErrors(prev => ({ ...prev, allocation: undefined }))
+  }
+
+  const selectSharedAllocation = () => {
+    setForm((prev) => {
+      const normalized = normalizeTransactionAllocation(prev, currentUserUid)
+      const currentClementSplit = normalized.allocationType === ALLOCATION_TYPES.SHARED
+        ? getSplitPercentageForPerson(normalized, CLEMENT_UID)
+        : 50
+
+      return { ...prev, ...createSharedAllocation(currentClementSplit) }
+    })
+    if (errors.allocation) setErrors(prev => ({ ...prev, allocation: undefined }))
+  }
+
+  const setClementSharedPercentage = (value) => {
+    const nextClementSplit = clampPercentage(value)
+    setForm(prev => ({ ...prev, ...createSharedAllocation(nextClementSplit) }))
+    if (errors.allocation) setErrors(prev => ({ ...prev, allocation: undefined }))
   }
 
   return (
@@ -228,31 +277,88 @@ export default function TransactionFormModal({ isOpen, onClose, onSave, onDelete
             )}
           </div>
 
-          {/* Person selector */}
+          {/* Allocation selector */}
           <div>
             <label className="text-xs text-text-muted mb-1.5 block font-medium uppercase tracking-wider">
-              Personne *
+              Répartition *
             </label>
             <div className="flex p-0.5 rounded-xl bg-bg-elevated border border-border-subtle">
-              {FINAUZI_PEOPLE.map(person => (
+              {FINAUZI_PEOPLE.map((person) => (
                 <button
                   key={person.uid}
-                  onClick={() => set('personUid', person.uid)}
-                  className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
-                    form.personUid === person.uid
+                  onClick={() => selectSingleAllocation(person.uid)}
+                  className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
+                    allocation.allocationType === ALLOCATION_TYPES.SINGLE && allocation.splits[0]?.personUid === person.uid
                       ? `${person.bg} ${person.text} shadow-sm`
                       : 'text-text-secondary hover:text-text-primary'
                   }`}
                 >
-                  <User className="h-3.5 w-3.5" />
                   {person.label}
                 </button>
               ))}
+              <button
+                onClick={selectSharedAllocation}
+                className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
+                  allocation.allocationType === ALLOCATION_TYPES.SHARED
+                    ? 'bg-purple-500/20 text-purple-300 shadow-sm'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                Partagé
+              </button>
             </div>
-            {errors.personUid && (
+            {errors.allocation && (
               <p className="text-xs text-danger mt-1 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" /> {errors.personUid}
+                <AlertCircle className="h-3 w-3" /> {errors.allocation}
               </p>
+            )}
+
+            {allocation.allocationType === ALLOCATION_TYPES.SHARED && (
+              <div className="mt-3 p-3 rounded-xl bg-bg-elevated border border-border-subtle space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-text-secondary">Répartition du montant</p>
+                  <button
+                    type="button"
+                    onClick={() => setClementSharedPercentage(50)}
+                    className="inline-flex items-center gap-1 text-[11px] text-purple-300 hover:text-purple-200 transition-colors"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Réinitialiser à 50/50
+                  </button>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-text-muted">Part de Clément</span>
+                    <span className="text-xs font-semibold text-text-primary">{clementSplit}%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={clementSplit}
+                      onChange={(e) => setClementSharedPercentage(e.target.value)}
+                      className="flex-1 accent-purple-400"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={clementSplit}
+                      onChange={(e) => setClementSharedPercentage(e.target.value)}
+                      className="w-16 h-8 rounded-lg bg-bg-card border border-border-subtle px-2 text-xs tabular-nums text-right"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-text-muted">Part de Lise</span>
+                  <span className="text-xs font-semibold text-text-primary">{liseSplit}%</span>
+                </div>
+              </div>
             )}
           </div>
 

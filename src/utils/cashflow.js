@@ -2,6 +2,8 @@
 // Pure utility functions. All amounts are in EUR.
 // Display conversion is handled at the component level.
 
+import { normalizeTransactionAllocation } from './transactionAllocation.js'
+
 /**
  * Generate an array of the next N months starting from a base date.
  * Each entry: { year, month, label, key }
@@ -205,27 +207,59 @@ export function getHealthStatus(forecastData, safetyBuffer) {
 // ─── Person-based calculation helpers ───
 
 /**
- * Get monthly net cashflow for a specific person.
+ * Get allocated amount for a given person on a transaction.
  */
-export function getMonthlyNetCashflowByPerson(transactions, personUid) {
+export function getAllocatedAmountForPerson(transaction, personUid) {
+  const allocation = normalizeTransactionAllocation(transaction, personUid)
+  const split = allocation.splits.find(item => item.personUid === personUid)
+  if (!split) return 0
+  return Number(transaction.amountEUR) * (split.percentage / 100)
+}
+
+/**
+ * Get monthly income for a specific person.
+ */
+export function getMonthlyIncomeByPerson(transactions, personUid) {
   const now = new Date()
   const year = now.getFullYear()
   const month = now.getMonth()
-
   let totalIncome = 0
+
+  for (const tx of transactions) {
+    if (tx.recurrence !== 'monthly') continue
+    if (tx.type !== 'income') continue
+    if (!isTransactionActiveForMonth(tx, year, month)) continue
+    totalIncome += getAllocatedAmountForPerson(tx, personUid)
+  }
+
+  return totalIncome
+}
+
+/**
+ * Get monthly expenses for a specific person.
+ */
+export function getMonthlyExpensesByPerson(transactions, personUid) {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth()
   let totalExpenses = 0
 
   for (const tx of transactions) {
-    if (tx.personUid !== personUid) continue
     if (tx.recurrence !== 'monthly') continue
+    if (tx.type !== 'expense') continue
     if (!isTransactionActiveForMonth(tx, year, month)) continue
-
-    if (tx.type === 'income') {
-      totalIncome += tx.amountEUR
-    } else {
-      totalExpenses += tx.amountEUR
-    }
+    totalExpenses += getAllocatedAmountForPerson(tx, personUid)
   }
+
+  return totalExpenses
+}
+
+/**
+ * Get monthly net cashflow for a specific person.
+ */
+export function getMonthlyNetCashflowByPerson(transactions, personUid) {
+  const totalIncome = getMonthlyIncomeByPerson(transactions, personUid)
+  const totalExpenses = getMonthlyExpensesByPerson(transactions, personUid)
 
   return {
     totalIncome,
@@ -244,12 +278,12 @@ export function getOneOffImpactByPerson(transactions, personUid, monthCount = 12
 
   for (const m of months) {
     for (const tx of transactions) {
-      if (tx.personUid !== personUid) continue
       if (tx.recurrence !== 'one-off') continue
       if (!isOneOffInMonth(tx, m.year, m.month)) continue
 
-      if (tx.type === 'income') totalIncome += tx.amountEUR
-      else totalExpenses += tx.amountEUR
+      const allocatedAmount = getAllocatedAmountForPerson(tx, personUid)
+      if (tx.type === 'income') totalIncome += allocatedAmount
+      else totalExpenses += allocatedAmount
     }
   }
 

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Calendar, Pause, Play, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import CategoryBadge from '../australia/CategoryBadge.jsx'
 import { getPersonByUid } from '../../config/people.js'
+import { ALLOCATION_TYPES, getAllocationDisplay } from '../../utils/transactionAllocation.js'
 
 export default function MobileTransactionsTab({ data }) {
   const [tab, setTab] = useState('monthly')
@@ -78,11 +79,15 @@ export default function MobileTransactionsTab({ data }) {
 // ─── Mobile Transaction Row ───
 function MobileTransactionRow({ transaction, onEdit, onDelete, onTogglePause, format }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { title, amountEUR, type, recurrence, category, date, isActive, notes, personUid } = transaction
+  const { title, amountEUR, type, recurrence, category, date, isActive, notes } = transaction
   const isIncome = type === 'income'
   const isRecurring = recurrence === 'monthly'
   const isPaused = !isActive
-  const person = getPersonByUid(personUid)
+  const allocation = getAllocationDisplay(transaction)
+  const person = allocation.singlePersonUid ? getPersonByUid(allocation.singlePersonUid) : null
+  const allocationBadgeClasses = allocation.allocationType === ALLOCATION_TYPES.SHARED
+    ? 'bg-purple-500/15 text-purple-300 border-purple-500/25'
+    : `${person?.bg || 'bg-bg-elevated'} ${person?.text || 'text-text-primary'} ${person?.border || 'border-border-subtle'}`
 
   const formattedDate = new Date(date).toLocaleDateString('fr-FR', {
     day: 'numeric',
@@ -114,10 +119,10 @@ function MobileTransactionRow({ transaction, onEdit, onDelete, onTogglePause, fo
             )}
           </div>
           <p className="text-[11px] text-text-muted mt-0.5 flex items-center gap-1.5">
-            {/* Person badge */}
-            {person && (
-              <span className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-semibold ${person.bg} ${person.text} border ${person.border}`}>
-                {person.shortLabel}
+            {/* Allocation badge */}
+            {(allocation.allocationType === ALLOCATION_TYPES.SHARED || person) && (
+              <span className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-semibold border ${allocationBadgeClasses}`}>
+                {allocation.label}
               </span>
             )}
             <span>{isRecurring ? 'Mensuel' : formattedDate}</span>

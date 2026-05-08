@@ -1,13 +1,22 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { CurrencyProvider } from './context/CurrencyContext.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import Header from './components/layout/Header.jsx'
 import Sidebar from './components/layout/Sidebar.jsx'
 import LoginView from './views/LoginView.jsx'
-import AustraliaView from './views/AustraliaView.jsx'
-import SettingsView from './views/SettingsView.jsx'
 import LoadingScreen from './components/auth/LoadingScreen.jsx'
 import AccessDeniedScreen from './components/auth/AccessDeniedScreen.jsx'
+
+const AustraliaView = lazy(() => import('./views/AustraliaView.jsx'))
+const SettingsView = lazy(() => import('./views/SettingsView.jsx'))
+
+function ViewFallback() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <span className="inline-block h-6 w-6 border-2 border-brand/30 border-t-brand-glow rounded-full animate-spin" />
+    </div>
+  )
+}
 
 function ViewContainer({ active }) {
   switch (active) {
@@ -72,7 +81,9 @@ export default function App() {
               ? 'lg:px-4 lg:sm:px-6 lg:py-6'
               : 'px-4 sm:px-6 py-6'
           }`}>
-            <ViewContainer active={active} />
+            <Suspense fallback={<ViewFallback />}>
+              <ViewContainer active={active} />
+            </Suspense>
           </main>
         </div>
       </div>

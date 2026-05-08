@@ -1,5 +1,5 @@
 // PersonBreakdown — shows per-person income/expense/net cards.
-import { FINAUZI_PEOPLE, getPersonByUid } from '../../config/people.js'
+import { FINAUZI_PEOPLE } from '../../config/people.js'
 
 export default function PersonBreakdown({ personBreakdown, format }) {
   return (
@@ -82,16 +82,16 @@ export function MobilePersonBreakdown({ personBreakdown, format }) {
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-text-muted">Revenus</span>
+                <span className="text-[10px] text-text-muted">Revenus mensuels</span>
                 <span className="text-xs font-semibold tabular-nums text-emerald-400">+{format(data.monthly.totalIncome)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-text-muted">Dépenses</span>
+                <span className="text-[10px] text-text-muted">Dépenses mensuelles</span>
                 <span className="text-xs font-semibold tabular-nums text-rose-400">−{format(data.monthly.totalExpenses)}</span>
               </div>
               <div className="h-px bg-border-subtle/60" />
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-text-muted font-medium">Net</span>
+                <span className="text-[10px] text-text-muted font-medium">Net mensuel</span>
                 <span className={`text-sm font-bold tabular-nums ${netColor}`}>
                   {net >= 0 ? '+' : '−'}{format(Math.abs(net))}
                 </span>

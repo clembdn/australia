@@ -139,7 +139,7 @@ export default function MobileOverviewTab({ data }) {
         <div>
           <div className="flex items-center gap-1.5 mb-3">
             <Users className="h-3.5 w-3.5 text-text-muted" />
-            <p className="text-[10px] text-text-muted font-medium uppercase tracking-wider">Par personne</p>
+            <p className="text-[10px] text-text-muted font-medium uppercase tracking-wider">Répartition par personne</p>
           </div>
           <MobilePersonBreakdown personBreakdown={personBreakdown} format={format} />
         </div>
