@@ -10,6 +10,7 @@ import AccessDeniedScreen from './components/auth/AccessDeniedScreen.jsx'
 const AustraliaView = lazy(() => import('./views/AustraliaView.jsx'))
 const EquilibreView = lazy(() => import('./views/EquilibreView.jsx'))
 const SettingsView = lazy(() => import('./views/SettingsView.jsx'))
+const ChecklistView = lazy(() => import('./views/ChecklistView.jsx'))
 
 function ViewFallback() {
   return (
@@ -23,6 +24,8 @@ function ViewContainer({ active }) {
   switch (active) {
     case 'settings':
       return <SettingsView />
+    case 'checklist':
+      return <ChecklistView />
     case 'equilibre':
       return <EquilibreView />
     case 'australia':

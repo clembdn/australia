@@ -81,6 +81,17 @@ service cloud.firestore {
       allow delete: if isAuthorizedUser();
     }
 
+    // Checklist
+    match /couples/main/checklist/{itemId} {
+      allow read: if isAuthorizedUser();
+      allow create: if isAuthorizedUser()
+        && isValidUserMetadata(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAuthorizedUser()
+        && isValidUserMetadata(request.resource.data);
+      allow delete: if isAuthorizedUser();
+    }
+
     // Settings
     match /couples/main/settings/{settingsId} {
       allow read: if isAuthorizedUser();
