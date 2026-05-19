@@ -68,7 +68,7 @@ export default function TransactionsView() {
 
   return (
     <div className="fade-in pb-32 lg:pb-12">
-      <div className="max-w-3xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 lg:pt-10">
+      <div className="max-w-3xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 pt-8 lg:pt-10">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold tracking-tight text-white">Transactions</h1>
           <button
@@ -80,7 +80,7 @@ export default function TransactionsView() {
           </button>
         </div>
 
-        <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8">
+        <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10 xl:gap-14">
           {/* Desktop filter sidebar */}
           <aside className="hidden lg:block">
             <DesktopFilters {...filtersProps} />

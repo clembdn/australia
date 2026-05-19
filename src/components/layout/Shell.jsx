@@ -1,9 +1,13 @@
+import { lazy, Suspense } from 'react'
 import BottomNav, { TABS } from './BottomNav.jsx'
 import Sidebar from './Sidebar.jsx'
-import SettingsDrawer from './SettingsDrawer.jsx'
-import TransactionFormModal from '../transactions/TransactionFormModal.jsx'
+import { Toaster } from '../ui/sonner.jsx'
 import { useUI } from '../../context/UIContext.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
+
+// Lazy-loaded — heavy date-picker / form chunks only load on first open.
+const TransactionFormModal = lazy(() => import('../transactions/TransactionFormModal.jsx'))
+const SettingsDrawer = lazy(() => import('./SettingsDrawer.jsx'))
 
 export default function Shell({ active, onChange, children }) {
   const { formOpen, editingTx, closeForm, settingsOpen, closeSettings } = useUI()
@@ -46,15 +50,20 @@ export default function Shell({ active, onChange, children }) {
         <BottomNav active={active} onChange={onChange} />
       </div>
 
-      {formOpen && (
-        <TransactionFormModal
-          onClose={closeForm}
-          currentUid={currentUser?.uid}
-          existing={editingTx}
-        />
-      )}
+      <Suspense fallback={null}>
+        {formOpen && (
+          <TransactionFormModal
+            onClose={closeForm}
+            currentUid={currentUser?.uid}
+            existing={editingTx}
+          />
+        )}
+        {settingsOpen && (
+          <SettingsDrawer open={settingsOpen} onClose={closeSettings} />
+        )}
+      </Suspense>
 
-      <SettingsDrawer open={settingsOpen} onClose={closeSettings} />
+      <Toaster />
     </div>
   )
 }

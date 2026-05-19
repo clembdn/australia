@@ -82,7 +82,7 @@ export default function DashboardView() {
 
   return (
     <div className="fade-in pb-32 lg:pb-12">
-      <div className="max-w-3xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 lg:pt-10">
+      <div className="max-w-3xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 pt-8 lg:pt-10">
         <CapitalHero
           label={HERO_LABELS[accountView]}
           currentBalance={currentBalance}
@@ -141,7 +141,7 @@ export default function DashboardView() {
           <RangeSelector value={rangeId} onChange={setRangeId} />
         </div>
 
-        <div className="mt-8 lg:mt-10 lg:grid lg:grid-cols-2 lg:gap-8">
+        <div className="mt-8 lg:mt-10 lg:grid lg:grid-cols-2 lg:gap-8 xl:gap-12">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-white/30 mb-3">
               Ce mois-ci {accountView !== 'all' && <span className="text-white/50">· {HERO_LABELS[accountView].toLowerCase()}</span>}

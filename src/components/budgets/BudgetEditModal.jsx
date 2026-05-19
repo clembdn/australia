@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import Modal from '../ui/Modal.jsx'
 import { updateSettings } from '../../services/settingsService.js'
+import { toast } from '../ui/sonner.jsx'
 
 function formatEUR(n) {
   return new Intl.NumberFormat('fr-FR', {
@@ -17,17 +18,15 @@ export default function BudgetEditModal({ open, onClose, category, currentBudget
     existingAmount != null ? String(existingAmount) : ''
   )
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
 
   if (!category) return null
   const Icon = category.icon
 
   async function onSave(e) {
     e.preventDefault()
-    setError(null)
     const value = parseFloat(amount.replace(',', '.'))
     if (!isFinite(value) || value < 0) {
-      setError('Montant invalide')
+      toast.error('Montant invalide')
       return
     }
     setBusy(true)
@@ -36,9 +35,10 @@ export default function BudgetEditModal({ open, onClose, category, currentBudget
         { budgets: { ...currentBudgets, [category.id]: Math.round(value) } },
         currentUid,
       )
+      toast.success(`Budget « ${category.label} » enregistré`)
       onClose()
     } catch (err) {
-      setError(err.message || 'Erreur')
+      toast.error(err.message || 'Erreur')
       setBusy(false)
     }
   }
@@ -50,9 +50,10 @@ export default function BudgetEditModal({ open, onClose, category, currentBudget
       const next = { ...(currentBudgets || {}) }
       delete next[category.id]
       await updateSettings({ budgets: next }, currentUid)
+      toast.success('Budget supprimé')
       onClose()
     } catch (err) {
-      setError(err.message || 'Erreur')
+      toast.error(err.message || 'Erreur')
       setBusy(false)
     }
   }
@@ -88,8 +89,6 @@ export default function BudgetEditModal({ open, onClose, category, currentBudget
             className="w-full px-3 py-3 bg-white/[0.04] border border-white/10 rounded-xl text-lg text-white tabular focus:outline-none focus:border-white/30 transition"
           />
         </label>
-
-        {error && <p className="text-xs text-red-400">{error}</p>}
 
         <div className="flex gap-2">
           {existingAmount != null && (

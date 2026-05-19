@@ -67,7 +67,7 @@ export default function BudgetsView() {
 
   return (
     <div className="fade-in pb-32 lg:pb-12">
-      <div className="max-w-3xl lg:max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 lg:pt-10">
+      <div className="max-w-3xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 pt-8 lg:pt-10">
         <h1 className="text-2xl font-semibold tracking-tight text-white mb-1">Budgets</h1>
         <p className="text-xs text-white/40 capitalize mb-8">{monthLabel}</p>
 
@@ -107,7 +107,7 @@ export default function BudgetsView() {
         {/* Active budgets */}
         {withBudget.length > 0 && (
           <Section title="Mes budgets">
-            <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-3">
+            <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 lg:gap-4 xl:gap-5">
               {withBudget.map((cat) => (
                 <BudgetCard
                   key={cat.id}

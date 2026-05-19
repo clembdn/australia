@@ -4,6 +4,8 @@ import { createTransaction, updateTransaction, deleteTransaction } from '../../s
 import { AUTHORIZED_UIDS, getPerson, CLEMENT_UID } from '../../config/people.js'
 import { getCategoriesByType, getDefaultCategoryId, getCategory } from '../../config/categories.js'
 import Modal from '../ui/Modal.jsx'
+import { toast } from '../ui/sonner.jsx'
+import { DatePicker } from '../ui/date-picker.jsx'
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10)
@@ -28,7 +30,6 @@ export default function TransactionFormModal({ onClose, currentUid, existing }) 
   const [categoryId, setCategoryId] = useState(existing?.category || getDefaultCategoryId(existing?.type || 'expense'))
   const [notes, setNotes] = useState(existing?.notes || '')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!AUTHORIZED_UIDS.includes(personUid)) {
@@ -45,10 +46,9 @@ export default function TransactionFormModal({ onClose, currentUid, existing }) 
 
   async function onSubmit(e) {
     e.preventDefault()
-    setError(null)
     const amt = parseFloat(amount.replace(',', '.'))
-    if (!title.trim()) return setError('Donne un titre')
-    if (!isFinite(amt) || amt <= 0) return setError('Montant invalide')
+    if (!title.trim()) return toast.error('Donne un titre')
+    if (!isFinite(amt) || amt <= 0) return toast.error('Montant invalide')
     setBusy(true)
     try {
       const payload = {
@@ -66,13 +66,15 @@ export default function TransactionFormModal({ onClose, currentUid, existing }) 
       }
       if (isEdit) {
         await updateTransaction(existing.id, payload, currentUid)
+        toast.success('Transaction mise à jour')
       } else {
         await createTransaction(payload, currentUid)
+        toast.success('Transaction ajoutée')
       }
       onClose()
     } catch (err) {
       console.error(err)
-      setError(err.message || 'Erreur, réessaie')
+      toast.error(err.message || 'Erreur, réessaie')
     } finally {
       setBusy(false)
     }
@@ -84,9 +86,10 @@ export default function TransactionFormModal({ onClose, currentUid, existing }) 
     setBusy(true)
     try {
       await deleteTransaction(existing.id)
+      toast.success('Transaction supprimée')
       onClose()
     } catch (err) {
-      setError(err.message || 'Suppression impossible')
+      toast.error(err.message || 'Suppression impossible')
       setBusy(false)
     }
   }
@@ -208,20 +211,15 @@ export default function TransactionFormModal({ onClose, currentUid, existing }) 
 
         <div className="grid grid-cols-2 gap-3">
           <Field label={recurrence === 'one-off' ? 'Date' : 'Début'}>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className={inputClass}
-            />
+            <DatePicker value={date} onChange={setDate} />
           </Field>
           {recurrence !== 'one-off' && (
             <Field label="Fin (optionnel)">
-              <input
-                type="date"
+              <DatePicker
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className={inputClass}
+                onChange={setEndDate}
+                placeholder="Sans fin"
+                clearable
               />
             </Field>
           )}
@@ -257,8 +255,6 @@ export default function TransactionFormModal({ onClose, currentUid, existing }) 
             className={inputClass}
           />
         </Field>
-
-        {error && <p className="text-xs text-red-400">{error}</p>}
 
         <div className="flex gap-2 pt-2">
           {isEdit && (
