@@ -150,7 +150,7 @@ export default function TransactionFormModal({ onClose, currentUid, existing }) 
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={type === 'income' ? 'Ex: Salaire, Prime…' : 'Ex: Loyer, Courses…'}
+            placeholder={type === 'income' ? 'Ex: Salaire, Aide…' : 'Ex: Loyer, Courses…'}
             className={inputClass}
             autoFocus
           />
@@ -284,9 +284,9 @@ const inputClass = 'w-full px-3 py-2.5 bg-white/[0.04] border border-white/10 ro
 
 function Field({ label, children }) {
   return (
-    <label className="block">
+    <div>
       <span className="block text-[11px] uppercase tracking-wider text-white/40 mb-1.5">{label}</span>
       {children}
-    </label>
+    </div>
   )
 }

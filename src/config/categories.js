@@ -21,7 +21,7 @@ export const CATEGORIES = [
 
   // ─── Income ─────────────────────────────────────────────────
   { id: 'salary',        label: 'Salaire',      type: 'income',  icon: Briefcase,      hex: '#10B981', bgClass: 'bg-emerald-500/15', textClass: 'text-emerald-400', dotClass: 'bg-emerald-400', borderClass: 'border-emerald-500/30', ringClass: 'ring-emerald-500/30' },
-  { id: 'bonus',         label: 'Prime',        type: 'income',  icon: Gift,           hex: '#14B8A6', bgClass: 'bg-teal-500/15',    textClass: 'text-teal-400',    dotClass: 'bg-teal-400',    borderClass: 'border-teal-500/30',    ringClass: 'ring-teal-500/30' },
+  { id: 'bonus',         label: 'Aide',         type: 'income',  icon: Gift,           hex: '#14B8A6', bgClass: 'bg-teal-500/15',    textClass: 'text-teal-400',    dotClass: 'bg-teal-400',    borderClass: 'border-teal-500/30',    ringClass: 'ring-teal-500/30' },
   { id: 'other-income',  label: 'Autre',        type: 'income',  icon: TrendingUp,     hex: '#A8A29E', bgClass: 'bg-stone-500/15',   textClass: 'text-stone-400',   dotClass: 'bg-stone-400',   borderClass: 'border-stone-500/30',   ringClass: 'ring-stone-500/30' },
 ]
 

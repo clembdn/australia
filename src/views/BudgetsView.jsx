@@ -162,13 +162,16 @@ export default function BudgetsView() {
         )}
       </div>
 
-      <BudgetEditModal
-        open={!!editing}
-        onClose={() => setEditing(null)}
-        category={editing}
-        currentBudgets={budgets}
-        currentUid={currentUser?.uid}
-      />
+      {editing && (
+        <BudgetEditModal
+          key={editing.id}
+          open
+          onClose={() => setEditing(null)}
+          category={editing}
+          currentBudgets={budgets}
+          currentUid={currentUser?.uid}
+        />
+      )}
     </div>
   )
 }

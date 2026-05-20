@@ -94,8 +94,13 @@ export default function MonthBreakdown({ transactions }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between mb-1">
                       <span className="text-sm text-white font-medium">{cat.label}</span>
-                      <span className="text-sm font-semibold text-white tabular">
-                        {formatEUR(amount)}
+                      <span className="flex items-baseline gap-1.5">
+                        <span className="text-[11px] text-white/40 tabular">
+                          {Math.round(pct)}%
+                        </span>
+                        <span className="text-sm font-semibold text-white tabular">
+                          {formatEUR(amount)}
+                        </span>
                       </span>
                     </div>
                     <div className="h-1 bg-white/5 rounded-full overflow-hidden">

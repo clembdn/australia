@@ -9,13 +9,13 @@ export function Calendar({ className, classNames, showOutsideDays = true, ...pro
     <DayPicker
       locale={fr}
       showOutsideDays={showOutsideDays}
-      className={cn('p-3 select-none', className)}
+      className={cn('p-3 select-none relative', className)}
       classNames={{
         months: 'flex flex-col sm:flex-row gap-4',
         month: 'flex flex-col gap-3',
         month_caption: 'flex items-center justify-center pt-1 relative',
         caption_label: 'text-sm font-medium text-white capitalize',
-        nav: 'flex items-center gap-1 absolute right-1 top-1',
+        nav: 'flex items-center gap-1 absolute right-1 top-1 z-10',
         button_previous: cn(
           'h-7 w-7 inline-flex items-center justify-center rounded-md text-white/60',
           'hover:bg-white/10 hover:text-white transition disabled:opacity-30',
