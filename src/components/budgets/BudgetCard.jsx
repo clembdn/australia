@@ -1,12 +1,5 @@
 import { Pencil } from 'lucide-react'
-
-function formatEUR(n) {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(n || 0)
-}
+import { useCurrency } from '../../context/CurrencyContext.jsx'
 
 function getProgressColor(pct) {
   if (pct < 60) return '#10B981'   // emerald
@@ -21,6 +14,7 @@ function getStatusClass(pct) {
 }
 
 export default function BudgetCard({ category, budget, spent, onEdit }) {
+  const { format: formatEUR } = useCurrency()
   const Icon = category.icon
   const safeBudget = budget > 0 ? budget : 0
   const pct = safeBudget > 0 ? (spent / safeBudget) * 100 : 0

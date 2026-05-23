@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Plus, Users, User, Wallet } from 'lucide-react'
-import { useFinAuziData } from '../hooks/useFinAuziData.js'
+import { useAppData } from '../context/AppDataContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useUI } from '../context/UIContext.jsx'
 import { getPerson } from '../config/people.js'
+import { DEPARTURE_DATE, DEPARTURE_TIMESTAMP } from '../config/journey.js'
 import {
   getCurrentBalance,
   getMonthSummary,
@@ -28,10 +29,10 @@ const HERO_LABELS = {
 }
 
 export default function DashboardView() {
-  const { transactions, settings, isLoading } = useFinAuziData()
+  const { transactions, settings, isLoading } = useAppData()
   const { currentUser } = useAuth()
   const { openForm, openSettings } = useUI()
-  const me = getPerson(currentUser?.uid)
+  const me = getPerson(currentUser?.uid, settings.userColors)
   const [accountView, setAccountView] = useState('all')
   const [rangeId, setRangeId] = useState('6M')
   const [hovered, setHovered] = useState(null)
@@ -88,6 +89,7 @@ export default function DashboardView() {
           currentBalance={currentBalance}
           hoveredPoint={hovered}
           baselineBalance={baselineBalance}
+          departureDate={DEPARTURE_DATE}
           rightSlot={
             me && (
               <button
@@ -134,6 +136,7 @@ export default function DashboardView() {
             onHover={setHovered}
             height={280}
             baselineIndex={0}
+            departureTimestamp={DEPARTURE_TIMESTAMP}
           />
         </div>
 

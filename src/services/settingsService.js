@@ -8,6 +8,13 @@ export const DEFAULT_SETTINGS = {
   commonInitialCapitalEUR: 0,
   safetyBufferEUR: 1500,
   budgets: {},
+  // Per-user palette choice. Each user picks one of COLOR_PALETTE ids.
+  // A color claimed by one uid is locked for the other.
+  userColors: {},
+  // Display currency settings.
+  // Internal data stays in EUR; AUD is shown by converting at this rate.
+  currency: 'EUR',
+  eurToAud: 1.65,
 }
 
 export function subscribeToSettings(callback, onError) {

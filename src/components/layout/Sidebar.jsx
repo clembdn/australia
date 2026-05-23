@@ -1,7 +1,8 @@
-import { Plus, Settings } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { SIDEBAR_SECTIONS } from '../../config/navigation.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useUI } from '../../context/UIContext.jsx'
+import { useAppData } from '../../context/AppDataContext.jsx'
 import { getPerson } from '../../config/people.js'
 import { cn } from '../../lib/utils.js'
 
@@ -9,7 +10,8 @@ import { cn } from '../../lib/utils.js'
 export default function Sidebar({ active, onChange }) {
   const { currentUser } = useAuth()
   const { openForm, openSettings } = useUI()
-  const me = getPerson(currentUser?.uid)
+  const { settings } = useAppData()
+  const me = getPerson(currentUser?.uid, settings.userColors)
 
   return (
     <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-60 flex-col border-r border-white/5 bg-[#0B0E13]/90 backdrop-blur-xl z-30">
@@ -39,15 +41,7 @@ export default function Sidebar({ active, onChange }) {
         </div>
       </nav>
 
-      <div className="px-3 py-4 border-t border-white/5 space-y-1">
-        <button
-          onClick={openSettings}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-white/40 hover:text-white hover:bg-white/[0.03] transition"
-        >
-          <Settings size={15} strokeWidth={2} />
-          Réglages
-        </button>
-
+      <div className="px-3 py-4 border-t border-white/5">
         {me && (
           <button
             onClick={openSettings}

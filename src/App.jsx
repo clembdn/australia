@@ -1,6 +1,8 @@
 import { useState, lazy, Suspense } from 'react'
 import { useAuth } from './context/AuthContext.jsx'
 import { UIProvider } from './context/UIContext.jsx'
+import { AppDataProvider } from './context/AppDataContext.jsx'
+import { CurrencyProvider } from './context/CurrencyContext.jsx'
 import LoginView from './views/LoginView.jsx'
 import Shell from './components/layout/Shell.jsx'
 
@@ -41,7 +43,6 @@ function ActiveView({ active, onNavigate }) {
     case 'budgets':      return <BudgetsView />
     case 'checklist':    return <VoyageView section="checklist" onNavigate={onNavigate} />
     case 'timeline':     return <VoyageView section="timeline"  onNavigate={onNavigate} />
-    case 'scenarios':    return <VoyageView section="scenarios" onNavigate={onNavigate} />
     case 'dashboard':
     default:             return <DashboardView />
   }
@@ -56,12 +57,16 @@ export default function App() {
   if (!isAuthorized) return <Forbidden />
 
   return (
-    <UIProvider>
-      <Shell active={active} onChange={setActive}>
-        <Suspense fallback={<Splash />}>
-          <ActiveView active={active} onNavigate={setActive} />
-        </Suspense>
-      </Shell>
-    </UIProvider>
+    <AppDataProvider>
+      <CurrencyProvider>
+        <UIProvider>
+          <Shell active={active} onChange={setActive}>
+            <Suspense fallback={<Splash />}>
+              <ActiveView active={active} onNavigate={setActive} />
+            </Suspense>
+          </Shell>
+        </UIProvider>
+      </CurrencyProvider>
+    </AppDataProvider>
   )
 }

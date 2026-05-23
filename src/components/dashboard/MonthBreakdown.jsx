@@ -5,16 +5,12 @@ import {
   getMonthSpendingByPerson,
   getMonthSpendingByCategory,
 } from '../../utils/cashflow.js'
-
-function formatEUR(n) {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(n || 0)
-}
+import { useAppData } from '../../context/AppDataContext.jsx'
+import { useCurrency } from '../../context/CurrencyContext.jsx'
 
 export default function MonthBreakdown({ transactions }) {
+  const { settings } = useAppData()
+  const { format: formatEUR } = useCurrency()
   const spendingByPerson = useMemo(
     () => getMonthSpendingByPerson(transactions),
     [transactions],
@@ -49,7 +45,7 @@ export default function MonthBreakdown({ transactions }) {
           <p className="text-xs uppercase tracking-[0.18em] text-white/30 mb-3">Qui a payé</p>
           <div className="space-y-2">
             {AUTHORIZED_UIDS.map((uid) => {
-              const person = getPerson(uid)
+              const person = getPerson(uid, settings.userColors)
               const amount = spendingByPerson[uid] || 0
               const pct = totalPerson > 0 ? (amount / totalPerson) * 100 : 0
               return (

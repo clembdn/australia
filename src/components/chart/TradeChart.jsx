@@ -14,6 +14,7 @@ export default function TradeChart({
   accent,
   onHover,
   baselineIndex,
+  departureTimestamp,
 }) {
   const gradientId = useId().replace(/:/g, '')
 
@@ -92,6 +93,25 @@ export default function TradeChart({
               y={data[baselineIndex].balance}
               stroke="rgba(255,255,255,0.08)"
               strokeWidth={1}
+            />
+          )}
+
+          {typeof departureTimestamp === 'number'
+            && departureTimestamp >= data[0].timestamp
+            && departureTimestamp <= data[data.length - 1].timestamp && (
+            <ReferenceLine
+              x={departureTimestamp}
+              stroke="rgba(34,211,238,0.55)"
+              strokeWidth={1}
+              strokeDasharray="3 3"
+              label={{
+                value: 'Départ',
+                position: 'insideTopRight',
+                fill: 'rgba(34,211,238,0.85)',
+                fontSize: 10,
+                fontWeight: 600,
+              }}
+              ifOverflow="visible"
             />
           )}
 

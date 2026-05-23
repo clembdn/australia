@@ -1,11 +1,14 @@
-import { useMemo } from 'react'
-import { Plus, Search, Users, User } from 'lucide-react'
-import { useFinAuziData } from '../hooks/useFinAuziData.js'
+import { useMemo, Fragment, useState } from 'react'
+import { Plus, Search, Users, User, Plane, SlidersHorizontal, X, Check } from 'lucide-react'
+import { useAppData } from '../context/AppDataContext.jsx'
 import { useUI } from '../context/UIContext.jsx'
 import { AUTHORIZED_UIDS, getPerson } from '../config/people.js'
 import { CATEGORIES, getCategory } from '../config/categories.js'
+import { formatDateShort } from '../utils/cashflow.js'
+import { DEPARTURE_DATE, DEPARTURE_TIMESTAMP } from '../config/journey.js'
 import TransactionRow from '../components/transactions/TransactionRow.jsx'
-import { useState } from 'react'
+import { Sheet, SheetContent, SheetBody, SheetFooter } from '../components/ui/sheet.jsx'
+import { cn } from '../lib/utils.js'
 
 function groupByMonth(txs) {
   const groups = new Map()
@@ -22,13 +25,22 @@ function groupByMonth(txs) {
 }
 
 export default function TransactionsView() {
-  const { transactions, isLoading } = useFinAuziData()
+  const { transactions, settings, isLoading } = useAppData()
+  const userColors = settings.userColors
   const { openForm } = useUI()
   const [personFilter, setPersonFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
   const [accountFilter, setAccountFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  function resetFilters() {
+    setPersonFilter('all')
+    setTypeFilter('all')
+    setAccountFilter('all')
+    setCategoryFilter('all')
+  }
 
   const filtered = useMemo(() => {
     let list = transactions.filter((tx) => tx.isActive !== false)
@@ -64,7 +76,14 @@ export default function TransactionsView() {
     accountFilter, setAccountFilter,
     categoryFilter, setCategoryFilter,
     visibleCategories,
+    userColors,
   }
+
+  const activeCount =
+    (personFilter !== 'all' ? 1 : 0) +
+    (typeFilter !== 'all' ? 1 : 0) +
+    (accountFilter !== 'all' ? 1 : 0) +
+    (categoryFilter !== 'all' ? 1 : 0)
 
   return (
     <div className="fade-in pb-32 lg:pb-12">
@@ -88,8 +107,41 @@ export default function TransactionsView() {
 
           {/* Main column: search + mobile filters + list */}
           <div>
-            {/* Search */}
-            <div className="relative mb-3">
+            {/* Mobile toolbar: search + filters button */}
+            <div className="lg:hidden flex items-center gap-2 mb-2">
+              <div className="relative flex-1">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Rechercher…"
+                  className="w-full pl-9 pr-4 py-2.5 bg-white/[0.04] border border-white/5 rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 transition"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(true)}
+                className={cn(
+                  'relative inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-medium border transition flex-shrink-0',
+                  activeCount > 0
+                    ? 'bg-white text-black border-white'
+                    : 'bg-white/[0.04] text-white border-white/10 hover:bg-white/[0.06]',
+                )}
+                aria-label="Ouvrir les filtres"
+              >
+                <SlidersHorizontal size={14} strokeWidth={2.2} />
+                Filtres
+                {activeCount > 0 && (
+                  <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-black/90 text-white text-[10px] font-bold tabular">
+                    {activeCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Desktop search */}
+            <div className="hidden lg:block relative mb-3">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
               <input
                 type="text"
@@ -100,9 +152,12 @@ export default function TransactionsView() {
               />
             </div>
 
-            {/* Mobile filters (hidden on desktop) */}
-            <div className="lg:hidden">
-              <MobileFilters {...filtersProps} />
+            {/* Active filter chips (mobile) */}
+            <div className="lg:hidden mb-3">
+              <ActiveFilterChips
+                {...filtersProps}
+                onReset={resetFilters}
+              />
             </div>
 
             {isLoading ? (
@@ -121,128 +176,302 @@ export default function TransactionsView() {
               </div>
             ) : (
               <div className="space-y-6">
-                {groups.map((g) => (
-                  <div key={g.key}>
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-1 px-3">
-                      {g.label}
-                    </p>
-                    <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-1">
-                      {g.items.map((tx) => (
-                        <TransactionRow
-                          key={tx.id}
-                          tx={tx}
-                          onClick={() => openForm(tx)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                {groups.map((g, idx) => {
+                  const showDeparture = shouldShowDepartureBefore(groups, idx, DEPARTURE_TIMESTAMP)
+                  return (
+                    <Fragment key={g.key}>
+                      {showDeparture && <DepartureDivider date={DEPARTURE_DATE} />}
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-1 px-3">
+                          {g.label}
+                        </p>
+                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-1">
+                          {g.items.map((tx) => (
+                            <TransactionRow
+                              key={tx.id}
+                              tx={tx}
+                              onClick={() => openForm(tx)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </Fragment>
+                  )
+                })}
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Mobile filters sheet */}
+      <MobileFiltersSheet
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        resultsCount={filtered.length}
+        onReset={resetFilters}
+        {...filtersProps}
+      />
     </div>
   )
 }
 
-function MobileFilters({
+// ─── Active filter chips ─────────────────────────────────────────────────
+
+function ActiveFilterChips({
+  personFilter, setPersonFilter,
+  typeFilter, setTypeFilter,
+  accountFilter, setAccountFilter,
+  categoryFilter, setCategoryFilter,
+  userColors,
+  onReset,
+}) {
+  const chips = []
+  if (personFilter !== 'all') {
+    const p = getPerson(personFilter, userColors)
+    chips.push({
+      key: 'person',
+      label: p?.label || 'Personne',
+      onClear: () => setPersonFilter('all'),
+      dotClass: p?.dotClass,
+    })
+  }
+  if (typeFilter !== 'all') {
+    chips.push({
+      key: 'type',
+      label: typeFilter === 'income' ? 'Revenus' : 'Dépenses',
+      accentClass: typeFilter === 'income' ? 'text-emerald-400' : 'text-red-400',
+      onClear: () => setTypeFilter('all'),
+    })
+  }
+  if (accountFilter !== 'all') {
+    chips.push({
+      key: 'account',
+      label: accountFilter === 'common' ? 'Commun' : 'Personnel',
+      accentClass: accountFilter === 'common' ? 'text-sky-400' : 'text-white',
+      onClear: () => setAccountFilter('all'),
+    })
+  }
+  if (categoryFilter !== 'all') {
+    const cat = getCategory(categoryFilter)
+    chips.push({
+      key: 'category',
+      label: cat.label,
+      accentClass: cat.textClass,
+      onClear: () => setCategoryFilter('all'),
+    })
+  }
+
+  if (chips.length === 0) return null
+
+  return (
+    <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
+      {chips.map((c) => (
+        <span
+          key={c.key}
+          className={cn(
+            'inline-flex items-center gap-1.5 flex-shrink-0 pl-2.5 pr-1 py-1 rounded-full text-xs font-medium bg-white/[0.06] border border-white/10',
+            c.accentClass,
+          )}
+        >
+          {c.dotClass && <span className={`h-1.5 w-1.5 rounded-full ${c.dotClass}`} />}
+          {c.label}
+          <button
+            type="button"
+            onClick={c.onClear}
+            className="h-5 w-5 inline-flex items-center justify-center rounded-full hover:bg-white/10 transition"
+            aria-label={`Retirer ${c.label}`}
+          >
+            <X size={11} strokeWidth={2.4} />
+          </button>
+        </span>
+      ))}
+      <button
+        type="button"
+        onClick={onReset}
+        className="text-[11px] text-white/40 hover:text-white underline-offset-2 hover:underline transition flex-shrink-0 ml-1"
+      >
+        Tout effacer
+      </button>
+    </div>
+  )
+}
+
+// ─── Mobile filters bottom sheet ─────────────────────────────────────────
+
+function MobileFiltersSheet({
+  open,
+  onClose,
+  resultsCount,
+  onReset,
   personFilter, setPersonFilter,
   typeFilter, setTypeFilter,
   accountFilter, setAccountFilter,
   categoryFilter, setCategoryFilter,
   visibleCategories,
+  userColors,
 }) {
   return (
-    <>
-      <div className="flex items-center gap-1 mb-2 overflow-x-auto -mx-1 px-1">
-        <FilterPill active={personFilter === 'all'} onClick={() => setPersonFilter('all')}>
-          Tous
-        </FilterPill>
-        {AUTHORIZED_UIDS.map((uid) => {
-          const p = getPerson(uid)
-          return (
-            <FilterPill
-              key={uid}
-              active={personFilter === uid}
-              onClick={() => setPersonFilter(uid)}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${p.dotClass} mr-1.5`} />
-              {p.label}
-            </FilterPill>
-          )
-        })}
-      </div>
+    <Sheet open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+      <SheetContent side="bottom" desktopSide="bottom" title="Filtres" className="sm:max-w-md sm:left-1/2 sm:-translate-x-1/2">
+        <SheetBody>
+          <SheetSection title="Personne">
+            <ChipGroup>
+              <Chip active={personFilter === 'all'} onClick={() => setPersonFilter('all')}>
+                Tous
+              </Chip>
+              {AUTHORIZED_UIDS.map((uid) => {
+                const p = getPerson(uid, userColors)
+                const active = personFilter === uid
+                return (
+                  <Chip
+                    key={uid}
+                    active={active}
+                    onClick={() => setPersonFilter(uid)}
+                    activeClass={`${p.bgClass} ${p.textClass} ${p.borderClass}`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${p.dotClass} mr-1.5`} />
+                    {p.label}
+                  </Chip>
+                )
+              })}
+            </ChipGroup>
+          </SheetSection>
 
-      <div className="flex items-center gap-1 mb-2 overflow-x-auto -mx-1 px-1">
-        <FilterPill active={typeFilter === 'all'} onClick={() => { setTypeFilter('all'); setCategoryFilter('all') }}>
-          Tous
-        </FilterPill>
-        <FilterPill
-          active={typeFilter === 'income'}
-          onClick={() => { setTypeFilter('income'); setCategoryFilter('all') }}
-          accentClass="bg-emerald-500/15 text-emerald-400"
-        >
-          Revenus
-        </FilterPill>
-        <FilterPill
-          active={typeFilter === 'expense'}
-          onClick={() => { setTypeFilter('expense'); setCategoryFilter('all') }}
-          accentClass="bg-red-500/15 text-red-400"
-        >
-          Dépenses
-        </FilterPill>
-      </div>
-
-      <div className="flex items-center gap-1 mb-2 overflow-x-auto -mx-1 px-1">
-        <FilterPill active={accountFilter === 'all'} onClick={() => setAccountFilter('all')}>
-          Tous comptes
-        </FilterPill>
-        <FilterPill
-          active={accountFilter === 'common'}
-          onClick={() => setAccountFilter('common')}
-          accentClass="bg-sky-500/15 text-sky-400"
-        >
-          <Users size={11} strokeWidth={2.2} className="mr-1.5" />
-          Commun
-        </FilterPill>
-        <FilterPill
-          active={accountFilter === 'personal'}
-          onClick={() => setAccountFilter('personal')}
-        >
-          <User size={11} strokeWidth={2.2} className="mr-1.5" />
-          Personnel
-        </FilterPill>
-      </div>
-
-      {visibleCategories.length > 0 && (
-        <div className="flex items-center gap-1 mb-4 overflow-x-auto -mx-1 px-1 pb-1">
-          <FilterPill active={categoryFilter === 'all'} onClick={() => setCategoryFilter('all')}>
-            Toutes
-          </FilterPill>
-          {visibleCategories.map((cat) => {
-            const Icon = cat.icon
-            const active = categoryFilter === cat.id
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setCategoryFilter(cat.id)}
-                className={`inline-flex items-center gap-1.5 flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition border ${
-                  active
-                    ? `${cat.bgClass} ${cat.textClass} ${cat.borderClass}`
-                    : 'border-transparent text-white/50 hover:text-white hover:bg-white/5'
-                }`}
+          <SheetSection title="Type">
+            <ChipGroup>
+              <Chip active={typeFilter === 'all'} onClick={() => { setTypeFilter('all'); setCategoryFilter('all') }}>
+                Tous
+              </Chip>
+              <Chip
+                active={typeFilter === 'income'}
+                onClick={() => { setTypeFilter('income'); setCategoryFilter('all') }}
+                activeClass="bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
               >
-                <Icon size={12} strokeWidth={2.2} />
-                {cat.label}
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </>
+                Revenus
+              </Chip>
+              <Chip
+                active={typeFilter === 'expense'}
+                onClick={() => { setTypeFilter('expense'); setCategoryFilter('all') }}
+                activeClass="bg-red-500/15 text-red-400 border-red-500/30"
+              >
+                Dépenses
+              </Chip>
+            </ChipGroup>
+          </SheetSection>
+
+          <SheetSection title="Compte">
+            <ChipGroup>
+              <Chip active={accountFilter === 'all'} onClick={() => setAccountFilter('all')}>
+                Tous
+              </Chip>
+              <Chip
+                active={accountFilter === 'common'}
+                onClick={() => setAccountFilter('common')}
+                activeClass="bg-sky-500/15 text-sky-400 border-sky-500/30"
+              >
+                <Users size={11} strokeWidth={2.2} className="mr-1.5" />
+                Commun
+              </Chip>
+              <Chip
+                active={accountFilter === 'personal'}
+                onClick={() => setAccountFilter('personal')}
+                activeClass="bg-white/10 text-white border-white/20"
+              >
+                <User size={11} strokeWidth={2.2} className="mr-1.5" />
+                Personnel
+              </Chip>
+            </ChipGroup>
+          </SheetSection>
+
+          {visibleCategories.length > 0 && (
+            <SheetSection title="Catégorie">
+              <div className="grid grid-cols-3 gap-1.5">
+                <Chip
+                  active={categoryFilter === 'all'}
+                  onClick={() => setCategoryFilter('all')}
+                  fullWidth
+                >
+                  Toutes
+                </Chip>
+                {visibleCategories.map((cat) => {
+                  const Icon = cat.icon
+                  const active = categoryFilter === cat.id
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setCategoryFilter(cat.id)}
+                      className={cn(
+                        'inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition border',
+                        active
+                          ? `${cat.bgClass} ${cat.textClass} ${cat.borderClass}`
+                          : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white hover:bg-white/[0.06]',
+                      )}
+                    >
+                      <Icon size={12} strokeWidth={2.2} />
+                      {cat.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </SheetSection>
+          )}
+        </SheetBody>
+        <SheetFooter className="flex items-center gap-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
+          <button
+            type="button"
+            onClick={onReset}
+            className="px-4 py-3 rounded-xl text-sm font-medium text-white/60 hover:text-white hover:bg-white/[0.04] transition"
+          >
+            Tout effacer
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-white/90 transition"
+          >
+            <Check size={15} strokeWidth={2.6} />
+            Voir {resultsCount} résultat{resultsCount > 1 ? 's' : ''}
+          </button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }
+
+function SheetSection({ title, children }) {
+  return (
+    <section className="mb-6">
+      <p className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-2 px-1">{title}</p>
+      {children}
+    </section>
+  )
+}
+
+function ChipGroup({ children }) {
+  return <div className="flex flex-wrap gap-1.5">{children}</div>
+}
+
+function Chip({ active, onClick, activeClass, fullWidth, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center justify-center px-3.5 py-2 rounded-xl text-xs font-medium transition border',
+        fullWidth && 'w-full',
+        active
+          ? activeClass || 'bg-white text-black border-white'
+          : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white hover:bg-white/[0.06]',
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ─── Desktop sidebar filters ─────────────────────────────────────────────
 
 function DesktopFilters({
   personFilter, setPersonFilter,
@@ -250,6 +479,7 @@ function DesktopFilters({
   accountFilter, setAccountFilter,
   categoryFilter, setCategoryFilter,
   visibleCategories,
+  userColors,
 }) {
   return (
     <div className="sticky top-4 space-y-6">
@@ -258,7 +488,7 @@ function DesktopFilters({
           Tous
         </FilterRow>
         {AUTHORIZED_UIDS.map((uid) => {
-          const p = getPerson(uid)
+          const p = getPerson(uid, userColors)
           return (
             <FilterRow
               key={uid}
@@ -368,17 +598,26 @@ function FilterRow({ active, onClick, accentClass, children }) {
   )
 }
 
-function FilterPill({ active, onClick, accentClass, children }) {
+// Returns true when this group is the first one BELOW the departure date in the
+// reverse-chronological list — i.e. the boundary where we render the "départ" divider.
+function shouldShowDepartureBefore(groups, idx, departureTime) {
+  if (!departureTime) return false
+  const phase = (g) => new Date(g.items[0].date).getTime() >= departureTime ? 'australia' : 'prep'
+  const current = phase(groups[idx])
+  if (current !== 'prep') return false
+  if (idx === 0) return false
+  return phase(groups[idx - 1]) === 'australia'
+}
+
+function DepartureDivider({ date }) {
   return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${
-        active
-          ? accentClass || 'bg-white text-black'
-          : 'text-white/50 hover:text-white hover:bg-white/5'
-      }`}
-    >
-      {children}
-    </button>
+    <div className="flex items-center gap-3 px-2 -my-1 select-none">
+      <span className="flex-1 h-px bg-gradient-to-r from-transparent to-cyan-500/40" />
+      <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-cyan-400">
+        <Plane size={11} strokeWidth={2.2} />
+        Départ pour l'Australie · {formatDateShort(date)}
+      </span>
+      <span className="flex-1 h-px bg-gradient-to-l from-transparent to-cyan-500/40" />
+    </div>
   )
 }

@@ -1,12 +1,5 @@
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react'
-
-function formatEUR(n) {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(n || 0)
-}
+import { useCurrency } from '../../context/CurrencyContext.jsx'
 
 function StatCard({ icon: Icon, label, value, valueClass }) {
   return (
@@ -21,6 +14,7 @@ function StatCard({ icon: Icon, label, value, valueClass }) {
 }
 
 export default function QuickStats({ summary }) {
+  const { format: formatEUR } = useCurrency()
   return (
     <div className="grid grid-cols-3 gap-2 sm:gap-3">
       <StatCard

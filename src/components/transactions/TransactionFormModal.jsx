@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Users, User } from 'lucide-react'
 import { createTransaction, updateTransaction, deleteTransaction } from '../../services/transactionService.js'
 import { AUTHORIZED_UIDS, getPerson, CLEMENT_UID } from '../../config/people.js'
+import { useAppData } from '../../context/AppDataContext.jsx'
+import { useCurrency } from '../../context/CurrencyContext.jsx'
 import { getCategoriesByType, getDefaultCategoryId, getCategory } from '../../config/categories.js'
 import Modal from '../ui/Modal.jsx'
 import { toast } from '../ui/sonner.jsx'
@@ -18,10 +20,14 @@ const RECURRENCES = [
 ]
 
 export default function TransactionFormModal({ onClose, currentUid, existing }) {
+  const { settings } = useAppData()
+  const { rate } = useCurrency()
+  const userColors = settings.userColors
   const isEdit = !!existing
   const [type, setType] = useState(existing?.type || 'expense')
   const [account, setAccount] = useState(existing?.account || 'common')
   const [title, setTitle] = useState(existing?.title || '')
+  const [amountCurrency, setAmountCurrency] = useState('EUR')
   const [amount, setAmount] = useState(existing?.amountEUR != null ? String(existing.amountEUR) : '')
   const [recurrence, setRecurrence] = useState(existing?.recurrence || 'one-off')
   const [date, setDate] = useState(existing?.date ? existing.date.slice(0, 10) : todayISO())
@@ -44,11 +50,17 @@ export default function TransactionFormModal({ onClose, currentUid, existing }) 
 
   const categoriesForType = getCategoriesByType(type)
 
+  const amountInEUR = useMemo(() => {
+    const raw = parseFloat(amount.replace(',', '.'))
+    if (!isFinite(raw)) return null
+    return amountCurrency === 'AUD' ? raw / rate : raw
+  }, [amount, amountCurrency, rate])
+
   async function onSubmit(e) {
     e.preventDefault()
-    const amt = parseFloat(amount.replace(',', '.'))
     if (!title.trim()) return toast.error('Donne un titre')
-    if (!isFinite(amt) || amt <= 0) return toast.error('Montant invalide')
+    if (amountInEUR == null || amountInEUR <= 0) return toast.error('Montant invalide')
+    const amt = Math.round(amountInEUR * 100) / 100
     setBusy(true)
     try {
       const payload = {
@@ -156,15 +168,31 @@ export default function TransactionFormModal({ onClose, currentUid, existing }) 
           />
         </Field>
 
-        <Field label="Montant (EUR)">
-          <input
-            type="text"
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0,00"
-            className={`${inputClass} text-lg tabular`}
-          />
+        <Field label={`Montant (${amountCurrency})`}>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setAmountCurrency((c) => (c === 'EUR' ? 'AUD' : 'EUR'))}
+              title="Changer de devise"
+              className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center text-base font-semibold text-white/60 hover:text-white border-r border-white/10 rounded-l-xl transition focus:outline-none focus:bg-white/[0.06]"
+              aria-label={`Devise actuelle ${amountCurrency}, basculer`}
+            >
+              {amountCurrency === 'EUR' ? '€' : 'A$'}
+            </button>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0,00"
+              className={`${inputClass} pl-14 text-lg tabular`}
+            />
+          </div>
+          {amountCurrency === 'AUD' && amountInEUR != null && amountInEUR > 0 && (
+            <p className="text-[11px] text-white/40 mt-1.5">
+              ≈ {amountInEUR.toFixed(2).replace('.', ',')} € enregistré · taux 1 € = {rate} A$
+            </p>
+          )}
         </Field>
 
         <Field label="Catégorie">
@@ -228,7 +256,7 @@ export default function TransactionFormModal({ onClose, currentUid, existing }) 
         <Field label="Payé par">
           <div className="grid grid-cols-2 gap-1 p-1 bg-white/[0.04] rounded-xl">
             {AUTHORIZED_UIDS.map((uid) => {
-              const p = getPerson(uid)
+              const p = getPerson(uid, userColors)
               const active = personUid === uid
               return (
                 <button

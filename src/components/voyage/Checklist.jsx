@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Sparkles, Plus } from 'lucide-react'
-import { useFinAuziData } from '../../hooks/useFinAuziData.js'
+import { useAppData } from '../../context/AppDataContext.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { CHECKLIST_SECTIONS } from '../../config/checklistSuggestions.js'
 import {
@@ -13,7 +13,7 @@ import ChecklistAddModal from './ChecklistAddModal.jsx'
 import { cn } from '../../lib/utils.js'
 
 export default function Checklist() {
-  const { checklist, isChecklistLoading } = useFinAuziData()
+  const { checklist, isChecklistLoading } = useAppData()
   const { currentUser } = useAuth()
   const [activeSection, setActiveSection] = useState('before') // mobile-only inner tab
   const [editing, setEditing] = useState(null)

@@ -1,19 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
-import { useFinAuziData } from '../hooks/useFinAuziData.js'
+import { useAppData } from '../context/AppDataContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useCurrency } from '../context/CurrencyContext.jsx'
 import { EXPENSE_CATEGORIES, getCategory } from '../config/categories.js'
 import { getMonthSpendingByCategory, formatMonthLong } from '../utils/cashflow.js'
 import BudgetCard from '../components/budgets/BudgetCard.jsx'
 import BudgetEditModal from '../components/budgets/BudgetEditModal.jsx'
-
-function formatEUR(n) {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(n || 0)
-}
 
 function getProgressColor(pct) {
   if (pct < 60) return '#10B981'
@@ -22,8 +15,9 @@ function getProgressColor(pct) {
 }
 
 export default function BudgetsView() {
-  const { transactions, settings, isLoading } = useFinAuziData()
+  const { transactions, settings, isLoading } = useAppData()
   const { currentUser } = useAuth()
+  const { format: formatEUR } = useCurrency()
   const [editing, setEditing] = useState(null)
 
   const budgets = settings.budgets || {}

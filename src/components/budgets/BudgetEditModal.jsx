@@ -2,17 +2,11 @@ import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import Modal from '../ui/Modal.jsx'
 import { updateSettings } from '../../services/settingsService.js'
+import { useCurrency } from '../../context/CurrencyContext.jsx'
 import { toast } from '../ui/sonner.jsx'
 
-function formatEUR(n) {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(n || 0)
-}
-
 export default function BudgetEditModal({ open, onClose, category, currentBudgets, currentUid }) {
+  const { format: formatEUR } = useCurrency()
   const existingAmount = currentBudgets?.[category?.id]
   const [amount, setAmount] = useState(
     existingAmount != null ? String(existingAmount) : ''

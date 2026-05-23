@@ -1,14 +1,13 @@
-import { Home, List, PieChart, Plane, CheckSquare, Calendar, Sparkles } from 'lucide-react'
+import { Home, List, PieChart, Plane, CheckSquare, Calendar } from 'lucide-react'
 
 // IDs of all routable views.
-export const VOYAGE_SUB_IDS = ['checklist', 'timeline', 'scenarios']
+export const VOYAGE_SUB_IDS = ['checklist', 'timeline']
 export const TOP_LEVEL_IDS = ['dashboard', 'transactions', 'budgets', ...VOYAGE_SUB_IDS]
 
-// Voyage sub-pages — used by mobile page-tabs and desktop sidebar group.
+// Voyage sub-pages — kept for the mobile Voyage tab (which switches between them).
 export const VOYAGE_SUBS = [
-  { id: 'checklist', label: 'Checklist',  short: 'Check',   icon: CheckSquare },
-  { id: 'timeline',  label: 'Timeline',   short: 'Timeline', icon: Calendar },
-  { id: 'scenarios', label: 'Scénarios',  short: 'Scénarios', icon: Sparkles },
+  { id: 'checklist', label: 'Checklist', short: 'Check',    icon: CheckSquare, subtitle: 'Préparer le voyage' },
+  { id: 'timeline',  label: 'Timeline',  short: 'Timeline', icon: Calendar,    subtitle: 'Les étapes de l\'année' },
 ]
 
 // The default Voyage sub-page when the user lands on /voyage (mobile bottom-nav).
@@ -46,8 +45,7 @@ export const MOBILE_TABS = [
   },
 ]
 
-// Desktop sidebar structure.
-// Top-level items first, then groups with sub-items.
+// Desktop sidebar structure — single flat list, Checklist & Timeline live alongside the others.
 export const SIDEBAR_SECTIONS = [
   {
     type: 'items',
@@ -55,17 +53,16 @@ export const SIDEBAR_SECTIONS = [
       { id: 'dashboard',    label: 'Accueil',      icon: Home },
       { id: 'transactions', label: 'Transactions', icon: List },
       { id: 'budgets',      label: 'Budgets',      icon: PieChart },
+      { id: 'checklist',    label: 'Checklist',    icon: CheckSquare },
+      { id: 'timeline',     label: 'Timeline',     icon: Calendar },
     ],
-  },
-  {
-    type: 'group',
-    label: 'Voyage',
-    icon: Plane,
-    accentClass: 'text-cyan-400',
-    items: VOYAGE_SUBS,
   },
 ]
 
 export function isVoyageRoute(active) {
   return VOYAGE_SUB_IDS.includes(active)
+}
+
+export function getVoyageSub(id) {
+  return VOYAGE_SUBS.find((s) => s.id === id) || VOYAGE_SUBS[0]
 }

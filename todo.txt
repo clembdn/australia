@@ -1,9 +1,3 @@
-L'utilisateur A peut confirmer le remboursement de l'utilisateur B et vice versa.
-
-Couleur d'affichage :
-Le changement de couelur peut se faire uniquement sur le compte de l'utilisateur concerné.
-Si la couleur est déjà prise par A, B ne peut pas la prendre. C'est l'utilisateur qui a créé le compte qui peut la modifier.
-
 Checkliste complet :
 - Liste des démarches à faire avant de partir.
 - Liste des démarches à faire après être arrivé.
@@ -24,38 +18,8 @@ Différencier “prévu” et “réel”
 Prévu : un peu transparent / badge “prévu”
 Confirmé : dépense réelle validée
 
-Budgets par catégorie
-Logement : 1 200 €
-Courses : 500 €
-Transport : 150 €
-Sorties : 300 €
 
-Et l'app affiche le % qui reste chaque mois
-Ex : "Courses
-342 € / 500 €
-32% restants"
-vert : OK ;
-orange : proche de la limite ;
-rouge : dépassement.
-
-
-Un mode “Scénarios”
-exemple : "Scénario prudent :
-Pas de job pendant 3 mois
-
-Scénario réaliste :
-Job à partir du mois 2
-
-Scénario optimiste :
-Job dès le premier mois + loyer moins cher"
-Je pourrais comparer "Capital fin d’année
-
-Prudent : 4 200 €
-Réaliste : 9 800 €
-Optimiste : 14 500 €
-"
-
-Une timeline Australie configurable et optionnelle
+Une timeline Australie configurable
 exemples :
 Juin 2026 — Visa
 Juillet 2026 — Avion / Début école

@@ -302,3 +302,26 @@ export function formatMonthLong(d) {
   const date = d instanceof Date ? d : new Date(d)
   return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 }
+
+// ─── Journey phase helpers ────────────────────────────────────────────
+// The trip is split in two phases by the departure date:
+//   • 'prep'     — before departure (mostly personal expenses, saving up)
+//   • 'australia'— on/after departure (the common account starts being used)
+// Returns null when no departure date is configured yet.
+
+export function getJourneyPhase(date, departureDate) {
+  if (!departureDate) return null
+  const d = date instanceof Date ? date : new Date(date)
+  const dep = departureDate instanceof Date ? departureDate : new Date(departureDate)
+  return d.getTime() < dep.getTime() ? 'prep' : 'australia'
+}
+
+// Whole days between today and departure. Positive = days remaining,
+// 0 = day of departure, negative = days since arrival.
+export function getDaysToDeparture(departureDate, now = new Date()) {
+  if (!departureDate) return null
+  const dep = departureDate instanceof Date ? departureDate : new Date(departureDate)
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfDep = new Date(dep.getFullYear(), dep.getMonth(), dep.getDate())
+  return Math.round((startOfDep.getTime() - startOfToday.getTime()) / DAY_MS)
+}

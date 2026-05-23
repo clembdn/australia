@@ -2,14 +2,8 @@ import { Repeat, Users } from 'lucide-react'
 import { getPerson } from '../../config/people.js'
 import { getCategory } from '../../config/categories.js'
 import { formatDateShort } from '../../utils/cashflow.js'
-
-function formatEUR(n) {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(n || 0)
-}
+import { useAppData } from '../../context/AppDataContext.jsx'
+import { useCurrency } from '../../context/CurrencyContext.jsx'
 
 const RECURRENCE_LABEL = {
   'one-off': null,
@@ -18,7 +12,9 @@ const RECURRENCE_LABEL = {
 }
 
 export default function TransactionRow({ tx, onClick }) {
-  const person = getPerson(tx.personUid)
+  const { settings } = useAppData()
+  const { format: formatEUR } = useCurrency()
+  const person = getPerson(tx.personUid, settings.userColors)
   const category = getCategory(tx.category)
   const isIncome = tx.type === 'income'
   const isCommon = tx.account === 'common'
