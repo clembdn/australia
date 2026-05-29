@@ -15,15 +15,15 @@ export default function Sidebar({ active, onChange }) {
   const me = getPerson(currentUser?.uid, settings.userColors)
 
   return (
-    <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-60 flex-col border-r border-white/5 bg-[#0B0E13]/90 backdrop-blur-xl z-30">
+    <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-60 flex-col border-r border-border bg-bg/80 backdrop-blur-xl z-30">
       <div className="px-3 pt-5 pb-4">
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-white/40 hover:text-white hover:bg-white/[0.04] transition"
+          className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-muted hover:text-fg hover:bg-surface-2 transition"
         >
           <ArrowLeft size={14} /> Nos apps
         </Link>
-        <p className="text-sm font-semibold tracking-tight text-white px-2 mt-2">FinAuzi</p>
+        <p className="text-sm font-semibold tracking-tight text-fg px-2 mt-2">FinAuzi</p>
       </div>
 
       <nav className="flex-1 px-3 overflow-y-auto">
@@ -37,10 +37,10 @@ export default function Sidebar({ active, onChange }) {
           />
         ))}
 
-        <div className="pt-3 mt-3 border-t border-white/5">
+        <div className="pt-3 mt-3 border-t border-border">
           <button
             onClick={() => openForm(null)}
-            className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-white text-black hover:bg-white/90 active:scale-[0.98] transition"
+            className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-accent text-accent-fg hover:opacity-90 active:scale-[0.98] transition"
           >
             <Plus size={15} strokeWidth={2.6} />
             Nouvelle transaction
@@ -48,11 +48,11 @@ export default function Sidebar({ active, onChange }) {
         </div>
       </nav>
 
-      <div className="px-3 py-4 border-t border-white/5">
+      <div className="px-3 py-4 border-t border-border">
         {me && (
           <button
             onClick={openSettings}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.03] transition"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-2 transition"
             title="Ouvrir les réglages"
           >
             <span
@@ -63,7 +63,7 @@ export default function Sidebar({ active, onChange }) {
             >
               {me.initial}
             </span>
-            <span className="text-sm text-white/70">{me.label}</span>
+            <span className="text-sm text-muted">{me.label}</span>
           </button>
         )}
       </div>
@@ -74,7 +74,7 @@ export default function Sidebar({ active, onChange }) {
 function SidebarSection({ section, active, onChange, withDivider }) {
   if (section.type === 'items') {
     return (
-      <div className={cn('space-y-1', withDivider && 'mt-2 pt-2 border-t border-white/5')}>
+      <div className={cn('space-y-1', withDivider && 'mt-2 pt-2 border-t border-border')}>
         {section.items.map((item) => (
           <SidebarItem
             key={item.id}
@@ -91,18 +91,18 @@ function SidebarSection({ section, active, onChange, withDivider }) {
   const GroupIcon = section.icon
   const groupActive = section.items.some((sub) => sub.id === active)
   return (
-    <div className={cn(withDivider && 'mt-3 pt-3 border-t border-white/5')}>
+    <div className={cn(withDivider && 'mt-3 pt-3 border-t border-border')}>
       <div className="px-3 mb-1.5 flex items-center gap-2">
         {GroupIcon && (
           <GroupIcon
             size={12}
             strokeWidth={2.4}
-            className={cn(groupActive ? section.accentClass || 'text-white' : 'text-white/30')}
+            className={cn(groupActive ? section.accentClass || 'text-fg' : 'text-faint')}
           />
         )}
         <p className={cn(
           'text-[10px] uppercase tracking-[0.2em] font-medium transition',
-          groupActive ? 'text-white/60' : 'text-white/30',
+          groupActive ? 'text-muted' : 'text-faint',
         )}>
           {section.label}
         </p>
@@ -132,8 +132,8 @@ function SidebarItem({ item, active, onChange, indented }) {
         'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition',
         indented && 'ml-1',
         isActive
-          ? 'bg-white/[0.06] text-white'
-          : 'text-white/40 hover:text-white hover:bg-white/[0.03]',
+          ? 'bg-accent/10 text-accent'
+          : 'text-muted hover:text-fg hover:bg-surface-2',
       )}
     >
       <Icon size={indented ? 14 : 16} strokeWidth={isActive ? 2.3 : 2} />
