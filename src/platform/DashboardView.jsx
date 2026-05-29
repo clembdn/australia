@@ -58,15 +58,19 @@ function AppCard({ app }) {
   return (
     <Link
       to={app.path}
-      data-theme={app.theme}
       data-accent={app.accent}
-      className="group relative flex flex-col justify-between p-7 rounded-3xl border border-border bg-surface min-h-[220px] shadow-card transition hover:-translate-y-1 hover:shadow-lift"
+      className="group relative flex flex-col justify-between p-7 rounded-3xl min-h-[220px] overflow-hidden border border-accent/25 bg-surface shadow-card transition hover:-translate-y-1 hover:shadow-lift"
     >
-      {isSoon && <Badge className="absolute top-5 right-5">Bientôt</Badge>}
-      <span className="h-14 w-14 rounded-2xl flex items-center justify-center bg-accent/10 text-accent border border-accent/20">
-        <Icon size={26} strokeWidth={2} />
-      </span>
-      <div className="mt-6">
+      {/* Lavis de couleur propre à l'app (ambre / vert / …) */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent/30 via-accent/[0.12] to-transparent" />
+      <div className="pointer-events-none absolute -top-12 -right-8 h-40 w-40 rounded-full bg-accent/25 blur-3xl transition-opacity group-hover:opacity-80" />
+      <div className="relative flex items-start justify-between">
+        <span className="h-14 w-14 rounded-2xl flex items-center justify-center bg-accent text-accent-fg shadow-lg">
+          <Icon size={26} strokeWidth={2} />
+        </span>
+        {isSoon && <Badge variant="accent">Bientôt</Badge>}
+      </div>
+      <div className="relative mt-6">
         <h2 className="text-xl font-semibold text-fg tracking-[-0.01em]">{app.name}</h2>
         <p className="text-sm text-muted mt-1">{app.description}</p>
       </div>
