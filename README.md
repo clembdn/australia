@@ -158,6 +158,8 @@ couples/
       {itemId}                # { name, quantityLabel, aisle, checked, checkedBy, checkedAt, note, createdAt, createdBy, updatedAt, updatedBy }
     shoppingCatalog/
       {slug}                  # { name, nameLower, aisle, favorite, useCount, lastUsedAt, createdAt, createdBy, updatedAt, updatedBy }
+    recipes/
+      {recipeId}              # { title, note, ingredients[{name,quantityLabel}], steps[], createdAt, createdBy, updatedAt, updatedBy }
 ```
 
 ---

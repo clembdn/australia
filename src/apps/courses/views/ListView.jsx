@@ -3,15 +3,16 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft, Store, MoreVertical, Star } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { Button } from '@/shared/ui/Button.jsx'
-import { useCoursesData } from '../hooks/useCoursesData.js'
 import {
-  addItem, setItemChecked, updateItem, deleteItem, clearChecked, clearAll,
+  setItemChecked, updateItem, deleteItem, clearChecked, clearAll,
 } from '../services/shoppingItemsService.js'
 import {
-  recordUsage, toggleFavorite, setCatalogAisle, removeCatalogEntry,
+  toggleFavorite, setCatalogAisle, removeCatalogEntry,
 } from '../services/catalogService.js'
-import { guessAisle, slugify, normalizeName } from '../utils/aisleGuess.js'
+import { normalizeName } from '../utils/aisleGuess.js'
+import { addNamedItem } from '../utils/addItems.js'
 import { groupByAisle } from '../utils/grouping.js'
+import TabBar from '../components/TabBar.jsx'
 import QuickAddBar from '../components/QuickAddBar.jsx'
 import AisleSection from '../components/AisleSection.jsx'
 import CheckedZone from '../components/CheckedZone.jsx'
@@ -20,9 +21,8 @@ import StoreModeView from '../components/StoreModeView.jsx'
 import FavoritesSheet from '../components/FavoritesSheet.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
-export default function ListView() {
+export default function ListView({ tab, onTab, items, catalog, isLoading }) {
   const { currentUid } = useAuth()
-  const { items, catalog, isLoading } = useCoursesData()
   const [storeMode, setStoreMode] = useState(false)
   const [editing, setEditing] = useState(null)
   const [favOpen, setFavOpen] = useState(false)
@@ -40,13 +40,7 @@ export default function ListView() {
       .slice(0, 6)
   }, [catalog, items])
 
-  async function handleAdd(name) {
-    const slug = slugify(name)
-    const known = catalog.find((c) => c.id === slug)
-    const aisle = known?.aisle || guessAisle(name)
-    await addItem({ name, aisle }, currentUid)
-    await recordUsage(name, aisle, currentUid)
-  }
+  const handleAdd = (name) => addNamedItem({ name }, { catalog, currentUid })
   const handleToggle = (it) => setItemChecked(it, !it.checked, currentUid)
   const handleSave = (id, updates) => updateItem(id, updates, currentUid)
   const handleDelete = (id) => deleteItem(id)
@@ -63,7 +57,7 @@ export default function ListView() {
             <ArrowLeft size={14} /> Nos apps
           </Link>
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold tracking-[-0.01em] text-fg">Nos courses</h1>
+            <TabBar tab={tab} onTab={onTab} />
             <div className="flex items-center gap-1">
               <button onClick={() => setFavOpen(true)} className="p-2 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition" aria-label="Favoris">
                 <Star size={18} />

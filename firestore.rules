@@ -162,6 +162,33 @@ service cloud.firestore {
       allow delete: if isAuthorizedUser();
     }
 
+    function hasValidRecipeShape(data) {
+      return data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 120
+        && data.ingredients is list
+        && data.ingredients.size() <= 50
+        && data.steps is list
+        && data.steps.size() <= 30
+        && (!('note' in data) || data.note == null || (data.note is string && data.note.size() <= 500));
+    }
+
+    // Recipes (title + ingredients + preparation steps)
+    match /couples/main/recipes/{recipeId} {
+      allow read: if isAuthorizedUser();
+
+      allow create: if isAuthorizedUser()
+        && hasValidRecipeShape(request.resource.data)
+        && hasValidMetadata(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if isAuthorizedUser()
+        && hasValidRecipeShape(request.resource.data)
+        && request.resource.data.updatedBy == request.auth.uid;
+
+      allow delete: if isAuthorizedUser();
+    }
+
     // Deny everything else.
     match /{document=**} {
       allow read, write: if false;
