@@ -10,19 +10,21 @@ export default function ItemEditSheet({ item, onClose, onSave, onDelete }) {
   const [name, setName] = useState('')
   const [quantityLabel, setQuantityLabel] = useState('')
   const [aisle, setAisle] = useState('autres')
+  const [note, setNote] = useState('')
 
   useEffect(() => {
     if (item) {
       setName(item.name)
       setQuantityLabel(item.quantityLabel || '')
       setAisle(item.aisle)
+      setNote(item.note || '')
     }
   }, [item])
 
   function save() {
     const v = name.trim()
     if (!v) return
-    onSave(item.id, { name: v, quantityLabel: quantityLabel.trim() || null, aisle })
+    onSave(item.id, { name: v, quantityLabel: quantityLabel.trim() || null, aisle, note: note.trim() || null })
     onClose()
   }
 
@@ -60,6 +62,16 @@ export default function ItemEditSheet({ item, onClose, onSave, onDelete }) {
                 </button>
               ))}
             </div>
+          </div>
+          <div>
+            <label className="block text-xs text-muted mb-1.5">Note (optionnel)</label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              placeholder="ex. marque précise, sans gluten…"
+              className="w-full px-4 py-2.5 rounded-xl bg-surface-2 border border-border text-sm text-fg placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus:border-transparent transition resize-none"
+            />
           </div>
           <div className="flex gap-2 pt-2">
             <Button variant="secondary" className="flex-1" onClick={() => { onDelete(item.id); onClose() }}>

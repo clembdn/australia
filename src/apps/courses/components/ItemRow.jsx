@@ -19,10 +19,13 @@ export default function ItemRow({ item, onToggle, onEdit }) {
         <Check size={14} strokeWidth={3} />
       </button>
       <button onClick={() => onEdit(item)} className="flex-1 min-w-0 text-left">
-        <span className={cn('text-[15px] text-fg', item.checked && 'line-through text-faint')}>
-          {item.name}
-        </span>
-        {item.quantityLabel && <span className="ml-2 text-sm text-muted">{item.quantityLabel}</span>}
+        <div>
+          <span className={cn('text-[15px] text-fg', item.checked && 'line-through text-faint')}>
+            {item.name}
+          </span>
+          {item.quantityLabel && <span className="ml-2 text-sm text-muted">{item.quantityLabel}</span>}
+        </div>
+        {item.note && <p className="text-xs text-faint truncate">{item.note}</p>}
       </button>
       {person && (
         <span
