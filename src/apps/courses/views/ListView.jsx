@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Store, MoreVertical, Star } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { Button } from '@/shared/ui/Button.jsx'
 import {
-  setItemChecked, updateItem, deleteItem, clearChecked, clearAll,
+  setItemChecked, updateItem, deleteItem, clearChecked, clearAll, restoreItems,
 } from '../services/shoppingItemsService.js'
 import {
   toggleFavorite, setCatalogAisle, removeCatalogEntry,
@@ -28,6 +28,7 @@ export default function ListView({ tab, onTab, items, catalog, isLoading }) {
   const [favOpen, setFavOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirmAll, setConfirmAll] = useState(false)
+  const [undo, setUndo] = useState(null)
 
   const active = useMemo(() => items.filter((i) => !i.checked), [items])
   const checked = useMemo(() => items.filter((i) => i.checked), [items])
@@ -44,6 +45,26 @@ export default function ListView({ tab, onTab, items, catalog, isLoading }) {
   const handleToggle = (it) => setItemChecked(it, !it.checked, currentUid)
   const handleSave = (id, updates) => updateItem(id, updates, currentUid)
   const handleDelete = (id) => deleteItem(id)
+
+  useEffect(() => {
+    if (!undo) return
+    const t = setTimeout(() => setUndo(null), 6000)
+    return () => clearTimeout(t)
+  }, [undo])
+
+  function doClearChecked() {
+    if (checked.length === 0) return
+    setUndo({ items: checked, label: `${checked.length} article${checked.length > 1 ? 's' : ''} retiré${checked.length > 1 ? 's' : ''}` })
+    clearChecked()
+  }
+  function doClearAll() {
+    setUndo({ items, label: 'Liste vidée' })
+    clearAll()
+  }
+  function handleUndo() {
+    if (undo) restoreItems(undo.items, currentUid)
+    setUndo(null)
+  }
 
   if (storeMode) {
     return <StoreModeView items={items} onToggle={handleToggle} onExit={() => setStoreMode(false)} />
@@ -71,7 +92,7 @@ export default function ListView({ tab, onTab, items, catalog, isLoading }) {
                     <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
                     <div className="absolute right-0 mt-1 z-20 w-52 rounded-xl border border-border bg-surface shadow-lift py-1">
                       <button
-                        onClick={() => { clearChecked(); setMenuOpen(false) }}
+                        onClick={() => { doClearChecked(); setMenuOpen(false) }}
                         disabled={checked.length === 0}
                         className="w-full text-left px-4 py-2.5 text-sm text-fg hover:bg-surface-2 transition disabled:opacity-40 disabled:pointer-events-none"
                       >
@@ -116,7 +137,15 @@ export default function ListView({ tab, onTab, items, catalog, isLoading }) {
       </div>
 
       <div className="fixed bottom-0 inset-x-0 z-20 p-4 bg-gradient-to-t from-bg to-transparent pointer-events-none">
-        <div className="max-w-xl mx-auto pointer-events-auto">
+        <div className="max-w-xl mx-auto pointer-events-auto space-y-2">
+          {undo && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface shadow-lift px-4 py-2.5">
+              <span className="text-sm text-fg">{undo.label}</span>
+              <button onClick={handleUndo} className="text-sm font-medium text-accent hover:opacity-80 transition">
+                Annuler
+              </button>
+            </div>
+          )}
           <Button className="w-full shadow-lift" size="lg" onClick={() => setStoreMode(true)}>
             <Store size={18} /> Mode magasin
           </Button>

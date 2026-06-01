@@ -1,19 +1,27 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Plus, ChefHat } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { Button } from '@/shared/ui/Button.jsx'
+import { Input } from '@/shared/ui/Input.jsx'
 import TabBar from '../components/TabBar.jsx'
 import RecipeCard from '../components/RecipeCard.jsx'
 import RecipeDetail from '../components/RecipeDetail.jsx'
 import RecipeEditor from '../components/RecipeEditor.jsx'
 import { addRecipe, updateRecipe, deleteRecipe } from '../services/recipesService.js'
+import { normalizeName } from '../utils/aisleGuess.js'
 
 export default function RecipesView({ tab, onTab, recipes, recipesLoading, items, catalog, onGoToList }) {
   const { currentUid } = useAuth()
   const [mode, setMode] = useState('browse') // 'browse' | 'detail' | 'edit'
   const [selectedId, setSelectedId] = useState(null)
+  const [q, setQ] = useState('')
   const selected = recipes.find((r) => r.id === selectedId) || null
+
+  const filtered = useMemo(() => {
+    const n = normalizeName(q)
+    return n ? recipes.filter((r) => normalizeName(r.title).includes(n)) : recipes
+  }, [recipes, q])
 
   function openDetail(r) { setSelectedId(r.id); setMode('detail') }
   function openNew() { setSelectedId(null); setMode('edit') }
@@ -30,6 +38,13 @@ export default function RecipesView({ tab, onTab, recipes, recipesLoading, items
   }
   async function handleDelete(id) {
     await deleteRecipe(id)
+    backToBrowse()
+  }
+  async function handleDuplicate(recipe) {
+    await addRecipe(
+      { title: `${recipe.title} (copie)`, note: recipe.note, ingredients: recipe.ingredients, steps: recipe.steps },
+      currentUid,
+    )
     backToBrowse()
   }
 
@@ -51,6 +66,7 @@ export default function RecipesView({ tab, onTab, recipes, recipesLoading, items
         catalog={catalog}
         onBack={backToBrowse}
         onEdit={() => setMode('edit')}
+        onDuplicate={handleDuplicate}
         onDelete={handleDelete}
         onAdded={onGoToList}
       />
@@ -82,11 +98,24 @@ export default function RecipesView({ tab, onTab, recipes, recipesLoading, items
             <Button className="mt-4" onClick={openNew}><Plus size={16} /> Nouvelle recette</Button>
           </div>
         ) : (
-          <div className="space-y-2">
-            {recipes.map((r) => (
-              <RecipeCard key={r.id} recipe={r} onClick={() => openDetail(r)} />
-            ))}
-          </div>
+          <>
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Rechercher une recette…"
+              aria-label="Rechercher une recette"
+              className="mb-4"
+            />
+            {filtered.length === 0 ? (
+              <p className="text-center text-muted py-12">Aucune recette trouvée.</p>
+            ) : (
+              <div className="space-y-2">
+                {filtered.map((r) => (
+                  <RecipeCard key={r.id} recipe={r} onClick={() => openDetail(r)} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

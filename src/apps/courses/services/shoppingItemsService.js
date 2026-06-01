@@ -66,6 +66,9 @@ export async function updateItem(id, updates, currentUid) {
   if ('quantityLabel' in updates) {
     payload.quantityLabel = updates.quantityLabel ? String(updates.quantityLabel).trim() : null
   }
+  if ('note' in updates) {
+    payload.note = updates.note ? String(updates.note).trim() : null
+  }
   await updateDoc(itemDoc(id), payload)
 }
 
@@ -101,4 +104,28 @@ export function clearChecked() {
 // Supprime tous les articles (le catalogue persiste).
 export function clearAll() {
   return deleteWhere(() => true)
+}
+
+// Recrée des articles supprimés (annulation d'un vidage). Le restaurateur devient
+// createdBy/updatedBy (les règles exigent createdBy == auth.uid à la création).
+export async function restoreItems(items, currentUid) {
+  const now = new Date().toISOString()
+  const batch = writeBatch(db)
+  items.forEach((it) => {
+    const ref = doc(itemsCol())
+    batch.set(ref, {
+      name: String(it.name || '').trim(),
+      quantityLabel: it.quantityLabel || null,
+      aisle: resolveAisle(it.aisle),
+      checked: it.checked === true,
+      checkedBy: it.checkedBy || null,
+      checkedAt: it.checkedAt || null,
+      note: it.note || null,
+      createdAt: it.createdAt || now,
+      createdBy: currentUid,
+      updatedAt: now,
+      updatedBy: currentUid,
+    })
+  })
+  await batch.commit()
 }

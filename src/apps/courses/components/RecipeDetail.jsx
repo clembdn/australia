@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { ArrowLeft, Pencil, Trash2, Plus } from 'lucide-react'
+import { ArrowLeft, Pencil, Copy, Trash2, Plus } from 'lucide-react'
 import { Button } from '@/shared/ui/Button.jsx'
 import ConfirmDialog from './ConfirmDialog.jsx'
 import AddIngredientsSheet from './AddIngredientsSheet.jsx'
 
-export default function RecipeDetail({ recipe, items, catalog, onBack, onEdit, onDelete, onAdded }) {
+export default function RecipeDetail({ recipe, items, catalog, onBack, onEdit, onDuplicate, onDelete, onAdded }) {
   const [addOpen, setAddOpen] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
 
@@ -18,6 +18,9 @@ export default function RecipeDetail({ recipe, items, catalog, onBack, onEdit, o
           <div className="flex items-center gap-1">
             <button onClick={onEdit} className="p-2 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition" aria-label="Modifier">
               <Pencil size={18} />
+            </button>
+            <button onClick={() => onDuplicate(recipe)} className="p-2 rounded-lg text-muted hover:text-fg hover:bg-surface-2 transition" aria-label="Dupliquer">
+              <Copy size={18} />
             </button>
             <button onClick={() => setConfirmDel(true)} className="p-2 rounded-lg text-muted hover:text-danger hover:bg-surface-2 transition" aria-label="Supprimer">
               <Trash2 size={18} />
